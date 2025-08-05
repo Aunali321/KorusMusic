@@ -112,19 +112,18 @@ class SongRepositoryImpl(
     override suspend fun syncSongs() {
         withContext(ioDispatcher) {
             try {
-                // Get all albums to get their songs
+                // Get all albums with their songs in a single call
                 val albums = apiService.getAlbums(limit = 1000)
                 val allSongs = mutableListOf<li.auna.korusmusic.data.network.dto.SongDto>()
                 
-                // Get songs for each album
+                // Extract songs from albums (no need for separate API calls)
                 albums.forEach { album ->
-                    val albumSongs = apiService.getAlbumSongs(album.id)
-                    allSongs.addAll(albumSongs)
+                    allSongs.addAll(album.songs)
                 }
 
                 database.withTransaction {
                     // First sync artists and albums
-                    database.artistDao().insertArtists(albums.map { it.artist!!.toEntity() })
+                    database.artistDao().insertArtists(albums.mapNotNull { it.artist?.toEntity() })
                     database.albumDao().insertAlbums(albums.map { it.toEntity() })
                     
                     // Then sync songs
@@ -141,7 +140,7 @@ class SongRepositoryImpl(
         withContext(ioDispatcher) {
             try {
                 val idsString = songIds.joinToString(",")
-                val songs = apiService.getSongs(idsString)
+                val songs = apiService.getSongs(ids = idsString)
                 database.songDao().insertSongs(songs.map { it.toEntity() })
             } catch (e: Exception) {
                 // Log error but don't throw

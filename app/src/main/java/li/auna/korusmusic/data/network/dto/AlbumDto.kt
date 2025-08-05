@@ -16,5 +16,6 @@ data class AlbumDto(
     val artist: ArtistDto? = null,
     @SerialName("album_artist") val albumArtist: ArtistDto? = null,
     @SerialName("song_count") val songCount: Int = 0,
-    val duration: Int = 0
+    val duration: Int = 0,
+    val songs: List<SongDto> = emptyList()
 )

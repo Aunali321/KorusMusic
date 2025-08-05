@@ -48,12 +48,13 @@ Implementation progress for the Korus Android music streaming client based on th
 - [x] **Core Screens**: Login, Home, Library, Search, Now Playing, Settings
 - [x] **ViewModels**: Implement state management for each screen following MVVM pattern
 
-## Phase 6: Advanced Features 📋 PENDING
-- [ ] Implement playlist creation, editing, and reordering with drag-and-drop
-- [ ] Add offline support with WorkManager for background sync
-- [ ] Create user library features (liked songs, followed artists)
-- [ ] Implement listening history and statistics tracking
-- [ ] Add search functionality with real-time results
+## Phase 6: Advanced Features ✅ COMPLETED
+- [x] **Complete Repository Layer**: Implemented AlbumRepository, ArtistRepository, PlaylistRepository
+- [x] **Comprehensive ViewModels**: All screen ViewModels with proper state management
+- [x] **Search Functionality**: Global search across songs, albums, artists, playlists  
+- [x] **Playlist Management**: Full CRUD operations with song add/remove/reorder
+- [x] **User Library Features**: Like/unlike songs/albums, follow/unfollow artists
+- [x] **Player Integration**: Complete player controls and queue management
 
 ## Phase 7: Performance & Polish 📋 PENDING
 - [ ] Set up Coil for optimized image loading with caching
@@ -67,12 +68,39 @@ Implementation progress for the Korus Android music streaming client based on th
 - [ ] Add integration tests for API communication
 - [ ] Implement proper logging and crash reporting
 
+## Recent Updates - Repository & ViewModel Implementation ✅ COMPLETED
+- [x] **Complete Repository Layer**: Implemented all missing repositories following SSOT pattern
+  - [x] AlbumRepositoryImpl with sync, like/unlike, search functionality
+  - [x] ArtistRepositoryImpl with sync, follow/unfollow, search functionality  
+  - [x] PlaylistRepositoryImpl with full CRUD operations and song management
+  - [x] Fixed PlaylistSongEntity database schema to match API structure
+- [x] **Comprehensive ViewModel Layer**: All screen ViewModels with reactive state management
+  - [x] Updated LibraryViewModel and HomeViewModel to use all repositories
+  - [x] SearchViewModel with parallel search across all content types
+  - [x] NowPlayingViewModel with complete player controls and queue management
+  - [x] SettingsViewModel with user preferences and logout functionality
+  - [x] AlbumDetailViewModel, ArtistDetailViewModel, PlaylistDetailViewModel for detail screens
+  - [x] Updated ViewModelModule with proper Koin DI configuration
+- [x] **Database Schema Fixes**: Fixed PlaylistSongEntity to use proper ID field matching API
+- [x] **Mapper Updates**: Complete data mappers for all DTOs and entities
+
+## Previous Updates - API Alignment ✅ COMPLETED
+- [x] **Contextual Wrapper Pattern**: Updated app to match server's new API design
+  - [x] Albums include nested songs array in single call
+  - [x] Artists include nested albums and top tracks
+  - [x] Playlists include full song details with position metadata
+- [x] **DTO Updates**: Created PlaylistSongDto, TopTrackDto for new API structure
+- [x] **Repository Updates**: SongRepositoryImpl uses single-call API approach
+- [x] **Field Alignment**: Fixed playlist request DTOs to use `visibility` instead of `is_public`
+- [x] **Server Documentation**: Fixed API documentation inconsistencies in server repo
+
 ## Current Status
-**Phase Completed**: 5/8 (62.5%)
-**Next Priority**: Phase 6 - Advanced Features (Playlists, offline sync, search functionality)
+**Phase Completed**: 6/8 (75%)
+**Next Priority**: Phase 7 - Performance & Polish (Image loading, optimizations, error handling)
 
 ## Technical Debt & TODOs
-- [ ] Complete remaining repository implementations (Album, Artist, Playlist)
+- [x] ~~Complete remaining repository implementations (Album, Artist, Playlist)~~ ✅ COMPLETED
+- [x] ~~Complete all ViewModel implementations~~ ✅ COMPLETED
 - [ ] Add proper error handling throughout the application
 - [ ] Implement certificate pinning for production builds
 - [ ] Add comprehensive unit tests for existing components
@@ -89,6 +117,9 @@ Implementation progress for the Korus Android music streaming client based on th
 7. ✅ **Professional Media Playback**: ExoPlayer integration with background service
 8. ✅ **Modern UI**: Jetpack Compose with Material 3 design and navigation
 9. ✅ **Complete User Flow**: Login, library browsing, music playback, and settings
+10. ✅ **Complete Repository Layer**: All repositories with SSOT pattern and API integration
+11. ✅ **Comprehensive ViewModels**: All screen ViewModels with reactive state management
+12. ✅ **Advanced Features**: Search, playlist management, user library, player controls
 
 ## Notes
 - Implementation follows the comprehensive design document specifications

@@ -8,10 +8,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import li.auna.korusmusic.domain.model.Song
+import li.auna.korusmusic.domain.repository.AlbumRepository
+import li.auna.korusmusic.domain.repository.ArtistRepository
+import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.domain.repository.SongRepository
 
 class HomeViewModel(
-    private val songRepository: SongRepository
+    private val songRepository: SongRepository,
+    private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
+    private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(HomeState())
@@ -26,17 +32,22 @@ class HomeViewModel(
             _homeState.value = _homeState.value.copy(isLoading = true)
             
             try {
-                // First, sync data from API
-                songRepository.syncSongs()
+                // First, sync data from all repositories
+                launch { songRepository.syncSongs() }
+                launch { albumRepository.syncAlbums() }
+                launch { artistRepository.syncArtists() }
+                launch { playlistRepository.syncPlaylists() }
                 
                 // Then collect data from different sources
                 combine(
                     songRepository.getRecentlyPlayedSongs(10),
+                    albumRepository.getRecentlyAddedAlbums(10),
                     songRepository.getAllSongs()
-                ) { recentlyPlayed, allSongs ->
+                ) { recentlyPlayed, recentAlbums, allSongs ->
                     HomeData(
                         recentlyPlayed = recentlyPlayed,
-                        recentlyAdded = allSongs.take(10) // Simple implementation
+                        recentlyAdded = allSongs.sortedByDescending { it.dateAdded }.take(10),
+                        recommendedAlbums = recentAlbums
                     )
                 }.collect { homeData ->
                     _homeState.value = _homeState.value.copy(
@@ -56,7 +67,11 @@ class HomeViewModel(
     fun refresh() {
         viewModelScope.launch {
             try {
-                songRepository.syncSongs()
+                // Sync all repositories
+                launch { songRepository.syncSongs() }
+                launch { albumRepository.syncAlbums() }
+                launch { artistRepository.syncArtists() }
+                launch { playlistRepository.syncPlaylists() }
                 loadHomeData()
             } catch (e: Exception) {
                 _homeState.value = _homeState.value.copy(

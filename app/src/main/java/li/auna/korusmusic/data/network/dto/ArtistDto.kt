@@ -10,5 +10,7 @@ data class ArtistDto(
     @SerialName("sort_name") val sortName: String? = null,
     @SerialName("musicbrainz_id") val musicbrainzId: String? = null,
     @SerialName("album_count") val albumCount: Int = 0,
-    @SerialName("song_count") val songCount: Int = 0
+    @SerialName("song_count") val songCount: Int = 0,
+    val albums: List<AlbumDto> = emptyList(),
+    @SerialName("topTracks") val topTracks: List<TopTrackDto> = emptyList()
 )

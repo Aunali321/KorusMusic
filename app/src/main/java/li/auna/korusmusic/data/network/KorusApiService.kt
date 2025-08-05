@@ -44,12 +44,14 @@ interface KorusApiService {
     @GET("albums/{id}")
     suspend fun getAlbum(@Path("id") albumId: Long): AlbumDto
 
-    @GET("albums/{id}/songs")
-    suspend fun getAlbumSongs(@Path("id") albumId: Long): List<SongDto>
-
     // Songs
     @GET("songs")
-    suspend fun getSongs(@Query("ids") ids: String): List<SongDto>
+    suspend fun getSongs(
+        @Query("ids") ids: String? = null,
+        @Query("limit") limit: Int = 50,
+        @Query("offset") offset: Int = 0,
+        @Query("sort") sort: String? = null
+    ): List<SongDto>
 
     @GET("songs/{id}")
     suspend fun getSong(@Path("id") songId: Long): SongDto

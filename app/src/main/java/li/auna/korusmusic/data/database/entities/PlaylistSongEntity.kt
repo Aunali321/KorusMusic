@@ -4,10 +4,10 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "playlist_songs",
-    primaryKeys = ["playlist_id", "song_id"],
     foreignKeys = [
         ForeignKey(
             entity = PlaylistEntity::class,
@@ -25,10 +25,12 @@ import androidx.room.Index
     indices = [
         Index(value = ["playlist_id"]),
         Index(value = ["song_id"]),
-        Index(value = ["playlist_id", "position"])
+        Index(value = ["playlist_id", "position"]),
+        Index(value = ["playlist_id", "song_id"], unique = true)
     ]
 )
 data class PlaylistSongEntity(
+    @PrimaryKey val id: Long,
     @ColumnInfo(name = "playlist_id") val playlistId: Long,
     @ColumnInfo(name = "song_id") val songId: Long,
     val position: Int

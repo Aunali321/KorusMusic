@@ -2,6 +2,7 @@ package li.auna.korusmusic.di
 
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -22,6 +23,7 @@ import java.io.File
 val playerModule = module {
     
     // Database provider for ExoPlayer cache
+    @OptIn(UnstableApi::class)
     single<DatabaseProvider> { StandaloneDatabaseProvider(androidContext()) }
     
     // Cache for media files

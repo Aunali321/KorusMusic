@@ -11,14 +11,16 @@ import li.auna.korusmusic.domain.model.Album
 import li.auna.korusmusic.domain.model.Artist
 import li.auna.korusmusic.domain.model.Playlist
 import li.auna.korusmusic.domain.model.Song
+import li.auna.korusmusic.domain.repository.AlbumRepository
+import li.auna.korusmusic.domain.repository.ArtistRepository
+import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.domain.repository.SongRepository
 
 class LibraryViewModel(
-    private val songRepository: SongRepository
-    // TODO: Add other repositories when implemented
-    // private val albumRepository: AlbumRepository,
-    // private val artistRepository: ArtistRepository,
-    // private val playlistRepository: PlaylistRepository
+    private val songRepository: SongRepository,
+    private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
+    private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
 
     private val _libraryState = MutableStateFlow(LibraryState())
@@ -33,18 +35,28 @@ class LibraryViewModel(
             _libraryState.value = _libraryState.value.copy(isLoading = true)
             
             try {
-                // First, sync data from API
-                songRepository.syncSongs()
+                // First, sync data from all repositories
+                launch { songRepository.syncSongs() }
+                launch { albumRepository.syncAlbums() }
+                launch { artistRepository.syncArtists() }
+                launch { playlistRepository.syncPlaylists() }
                 
-                songRepository.getAllSongs().collect { songs ->
-                    _libraryState.value = _libraryState.value.copy(
+                // Collect data from all repositories
+                combine(
+                    songRepository.getAllSongs(),
+                    albumRepository.getAllAlbums(),
+                    artistRepository.getAllArtists(),
+                    playlistRepository.getAllPlaylists()
+                ) { songs, albums, artists, playlists ->
+                    LibraryState(
                         isLoading = false,
                         songs = songs,
-                        // TODO: Load other data types when repositories are implemented
-                        albums = emptyList(),
-                        artists = emptyList(),
-                        playlists = emptyList()
+                        albums = albums,
+                        artists = artists,
+                        playlists = playlists
                     )
+                }.collect { newState ->
+                    _libraryState.value = newState
                 }
             } catch (e: Exception) {
                 _libraryState.value = _libraryState.value.copy(
@@ -58,7 +70,11 @@ class LibraryViewModel(
     fun refresh() {
         viewModelScope.launch {
             try {
-                songRepository.syncSongs()
+                // Sync all repositories
+                launch { songRepository.syncSongs() }
+                launch { albumRepository.syncAlbums() }
+                launch { artistRepository.syncArtists() }
+                launch { playlistRepository.syncPlaylists() }
                 loadLibraryData()
             } catch (e: Exception) {
                 _libraryState.value = _libraryState.value.copy(
