@@ -1,0 +1,53 @@
+package li.auna.korusmusic
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
+import org.koin.android.ext.android.inject
+import li.auna.korusmusic.data.auth.TokenManager
+import li.auna.korusmusic.navigation.KorusNavigation
+import li.auna.korusmusic.player.PlayerServiceConnection
+import li.auna.korusmusic.ui.theme.KorusMusicTheme
+
+class MainActivity : ComponentActivity() {
+    
+    private val tokenManager: TokenManager by inject()
+    private val playerServiceConnection: PlayerServiceConnection by inject()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        
+        setContent {
+            KorusMusicTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    
+                    LaunchedEffect(Unit) {
+                        playerServiceConnection.connect()
+                    }
+                    
+                    KorusNavigation(
+                        navController = navController,
+                        tokenManager = tokenManager
+                    )
+                }
+            }
+        }
+    }
+    
+    override fun onDestroy() {
+        playerServiceConnection.disconnect()
+        super.onDestroy()
+    }
+}
