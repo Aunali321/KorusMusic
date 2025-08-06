@@ -27,15 +27,24 @@ fun LoginScreen(
     viewModel: LoginViewModel = koinViewModel()
 ) {
     val loginState by viewModel.loginState.collectAsState()
+    val serverUrlState by viewModel.serverUrl.collectAsState()
     val focusManager = LocalFocusManager.current
     
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var serverUrl by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showServerUrlField by remember { mutableStateOf(false) }
 
     LaunchedEffect(loginState.isSuccess) {
         if (loginState.isSuccess) {
             onLoginSuccess()
+        }
+    }
+    
+    LaunchedEffect(serverUrlState) {
+        if (serverUrl.isNotBlank() && serverUrl != serverUrlState) {
+            serverUrl = serverUrlState
         }
     }
 
@@ -70,6 +79,52 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Server URL Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Server URL",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = { showServerUrlField = !showServerUrlField }
+                    ) {
+                        Text(if (showServerUrlField) "Hide" else "Change")
+                    }
+                }
+                
+                if (showServerUrlField) {
+                    OutlinedTextField(
+                        value = serverUrl,
+                        onValueChange = { serverUrl = it },
+                        label = { Text("Server URL") },
+                        placeholder = { Text("https://your-server.com") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !loginState.isLoading,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
+                        singleLine = true
+                    )
+                } else {
+                    Text(
+                        text = serverUrl.ifBlank { "Using default server" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -108,7 +163,8 @@ fun LoginScreen(
                         onDone = {
                             focusManager.clearFocus()
                             if (username.isNotBlank() && password.isNotBlank()) {
-                                viewModel.login(username, password)
+                                val finalServerUrl = serverUrl.ifBlank { serverUrlState }
+                                viewModel.login(username, password, finalServerUrl)
                             }
                         }
                     ),
@@ -150,7 +206,8 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         viewModel.clearError()
-                        viewModel.login(username, password)
+                        val finalServerUrl = serverUrl.ifBlank { serverUrlState }
+                        viewModel.login(username, password, finalServerUrl)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

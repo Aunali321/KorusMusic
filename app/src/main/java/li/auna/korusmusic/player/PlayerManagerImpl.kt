@@ -13,13 +13,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import li.auna.korusmusic.BuildConfig
 import li.auna.korusmusic.domain.model.Song
 import li.auna.korusmusic.domain.repository.SongRepository
+import li.auna.korusmusic.data.preferences.PreferencesManager
+import kotlinx.coroutines.runBlocking
 
 class PlayerManagerImpl(
     private val exoPlayer: ExoPlayer,
-    private val songRepository: SongRepository
+    private val songRepository: SongRepository,
+    private val preferencesManager: PreferencesManager
 ) : PlayerManager, Player.Listener {
 
     private val _playerState = MutableStateFlow(PlayerState())
@@ -212,8 +214,9 @@ class PlayerManagerImpl(
             .setAlbumTitle(song.album.name)
             .build()
 
+        val serverUrl = runBlocking { preferencesManager.getServerUrl() }
         return MediaItem.Builder()
-            .setUri(song.getStreamUrl(BuildConfig.BASE_URL))
+            .setUri(song.getStreamUrl(serverUrl))
             .setMediaId(song.id.toString())
             .setMediaMetadata(metadata)
             .build()

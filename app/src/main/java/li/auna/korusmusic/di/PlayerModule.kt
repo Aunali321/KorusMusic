@@ -63,7 +63,7 @@ val playerModule = module {
     }
     
     // Player manager
-    single<PlayerManager> { PlayerManagerImpl(get(), get()) }
+    single<PlayerManager> { PlayerManagerImpl(get(), get(), get()) }
     
     // Player service connection
     single { PlayerServiceConnection(androidContext()) }

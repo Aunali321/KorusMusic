@@ -1,16 +1,19 @@
 package li.auna.korusmusic.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.get
+import org.koin.androidx.compose.getViewModel
 import li.auna.korusmusic.domain.repository.AuthRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -18,10 +21,13 @@ import li.auna.korusmusic.domain.repository.AuthRepository
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit,
-    authRepository: AuthRepository = get()
+    authRepository: AuthRepository = get(),
+    viewModel: SettingsViewModel = getViewModel()
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showServerUrlDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val serverUrl by viewModel.serverUrl.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -92,6 +98,13 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Settings,
+                title = "Server URL",
+                subtitle = serverUrl,
+                onClick = { showServerUrlDialog = true }
             )
 
             SettingsItem(
@@ -171,6 +184,21 @@ fun SettingsScreen(
             }
         )
     }
+    
+    if (showServerUrlDialog) {
+        ServerUrlDialog(
+            currentUrl = serverUrl,
+            onDismiss = { showServerUrlDialog = false },
+            onSave = { newUrl ->
+                viewModel.setServerUrl(newUrl)
+                showServerUrlDialog = false
+            },
+            onReset = {
+                viewModel.resetServerUrl()
+                showServerUrlDialog = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -218,4 +246,60 @@ private fun SettingsItem(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ServerUrlDialog(
+    currentUrl: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    onReset: () -> Unit
+) {
+    var url by remember { mutableStateOf(currentUrl) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Server URL") },
+        text = {
+            Column {
+                Text(
+                    text = "Enter the server URL (e.g., https://your-server.com)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text("Server URL") },
+                    placeholder = { Text("https://your-server.com") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(url) }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(
+                    onClick = onReset
+                ) {
+                    Text("Reset to Default")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = onDismiss
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+    )
 }

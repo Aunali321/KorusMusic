@@ -15,12 +15,14 @@ import li.auna.korusmusic.domain.repository.AlbumRepository
 import li.auna.korusmusic.domain.repository.ArtistRepository
 import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.domain.repository.SongRepository
+import li.auna.korusmusic.data.DataManager
 
 class LibraryViewModel(
     private val songRepository: SongRepository,
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
-    private val playlistRepository: PlaylistRepository
+    private val playlistRepository: PlaylistRepository,
+    private val dataManager: DataManager
 ) : ViewModel() {
 
     private val _libraryState = MutableStateFlow(LibraryState())
@@ -35,13 +37,7 @@ class LibraryViewModel(
             _libraryState.value = _libraryState.value.copy(isLoading = true)
             
             try {
-                // First, sync data from all repositories
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
-                
-                // Collect data from all repositories
+                // Collect data from all repositories (they handle their own sync)
                 combine(
                     songRepository.getAllSongs(),
                     albumRepository.getAllAlbums(),
@@ -68,20 +64,7 @@ class LibraryViewModel(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            try {
-                // Sync all repositories
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
-                loadLibraryData()
-            } catch (e: Exception) {
-                _libraryState.value = _libraryState.value.copy(
-                    error = e.message ?: "Failed to refresh library"
-                )
-            }
-        }
+        dataManager.refresh()
     }
 
     fun clearError() {

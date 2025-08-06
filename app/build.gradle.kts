@@ -23,7 +23,6 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            buildConfigField("String", "BASE_URL", "\"https://8it7wx-ip-43-249-230-66.tunnelmole.net/api/\"")
             buildConfigField("String", "BUILD_TYPE", "\"debug\"")
             isDebuggable = true
         }
@@ -34,7 +33,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"https://your-korus-server.com/api/\"")
             buildConfigField("String", "BUILD_TYPE", "\"release\"")
         }
     }

@@ -13,12 +13,12 @@ import li.auna.korusmusic.ui.screens.search.SearchViewModel
 import li.auna.korusmusic.ui.screens.settings.SettingsViewModel
 
 val viewModelModule = module {
-    viewModel { LoginViewModel(get()) }
-    viewModel { HomeViewModel(get(), get(), get(), get()) }
-    viewModel { LibraryViewModel(get(), get(), get(), get()) }
+    viewModel { LoginViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { LibraryViewModel(get(), get(), get(), get(), get()) }
     viewModel { SearchViewModel(get(), get(), get(), get()) }
     viewModel { NowPlayingViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get()) }
+    viewModel { SettingsViewModel(get(), get()) }
     
     // Detail ViewModels with parameters
     viewModel { (albumId: Long) ->

@@ -8,7 +8,7 @@ import androidx.room.withTransaction
 import li.auna.korusmusic.data.database.KorusDatabase
 import li.auna.korusmusic.data.mapper.toDomainModel
 import li.auna.korusmusic.data.mapper.toEntity
-import li.auna.korusmusic.data.network.KorusApiService
+import li.auna.korusmusic.data.network.KorusApiServiceProvider
 import li.auna.korusmusic.data.network.dto.*
 import li.auna.korusmusic.domain.model.Playlist
 import li.auna.korusmusic.domain.model.PlaylistSong
@@ -17,7 +17,7 @@ import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.data.database.entities.PlaylistEntity
 
 class PlaylistRepositoryImpl(
-    private val apiService: KorusApiService,
+    private val apiServiceProvider: KorusApiServiceProvider,
     private val database: KorusDatabase,
     private val ioDispatcher: CoroutineDispatcher
 ) : PlaylistRepository {
@@ -72,7 +72,7 @@ class PlaylistRepositoryImpl(
     override suspend fun syncPlaylists() {
         withContext(ioDispatcher) {
             try {
-                val playlists = apiService.getPlaylists()
+                val playlists = apiServiceProvider.getApiService().getPlaylists()
                 
                 database.withTransaction {
                     // Sync playlists
@@ -108,7 +108,7 @@ class PlaylistRepositoryImpl(
                     description = description,
                     visibility = if (isPublic) "public" else "private"
                 )
-                val playlistDto = apiService.createPlaylist(request)
+                val playlistDto = apiServiceProvider.getApiService().createPlaylist(request)
                 
                 // Sync the new playlist to local database
                 database.playlistDao().insertPlaylist(playlistDto.toEntity())
@@ -129,7 +129,7 @@ class PlaylistRepositoryImpl(
                     description = description,
                     visibility = if (isPublic) "public" else "private"
                 )
-                val updatedPlaylistDto = apiService.updatePlaylist(playlistId, request)
+                val updatedPlaylistDto = apiServiceProvider.getApiService().updatePlaylist(playlistId, request)
                 
                 // Update local database
                 database.playlistDao().insertPlaylist(updatedPlaylistDto.toEntity())
@@ -142,7 +142,7 @@ class PlaylistRepositoryImpl(
     override suspend fun deletePlaylist(playlistId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.deletePlaylist(playlistId)
+                apiServiceProvider.getApiService().deletePlaylist(playlistId)
                 
                 // Remove from local database
                 database.withTransaction {
@@ -159,10 +159,10 @@ class PlaylistRepositoryImpl(
         withContext(ioDispatcher) {
             try {
                 val request = AddSongsToPlaylistRequest(songIds)
-                apiService.addSongsToPlaylist(playlistId, request)
+                apiServiceProvider.getApiService().addSongsToPlaylist(playlistId, request)
                 
                 // Refresh playlist from server to get updated song list with positions
-                val updatedPlaylist = apiService.getPlaylist(playlistId)
+                val updatedPlaylist = apiServiceProvider.getApiService().getPlaylist(playlistId)
                 database.withTransaction {
                     // Update playlist
                     database.playlistDao().insertPlaylist(updatedPlaylist.toEntity())
@@ -187,7 +187,7 @@ class PlaylistRepositoryImpl(
                     .map { it.id } // Use the actual playlistSongId
                 
                 val request = RemoveSongsFromPlaylistRequest(playlistSongIds)
-                apiService.removeSongsFromPlaylist(playlistId, request)
+                apiServiceProvider.getApiService().removeSongsFromPlaylist(playlistId, request)
                 
                 // Remove from local database
                 database.playlistDao().removePlaylistSongs(playlistId, songIds)
@@ -201,7 +201,7 @@ class PlaylistRepositoryImpl(
         withContext(ioDispatcher) {
             try {
                 val request = ReorderPlaylistRequest(songId, newPosition)
-                apiService.reorderPlaylist(playlistId, request)
+                apiServiceProvider.getApiService().reorderPlaylist(playlistId, request)
                 
                 // Update local database position
                 database.playlistDao().updateSongPosition(playlistId, songId, newPosition)

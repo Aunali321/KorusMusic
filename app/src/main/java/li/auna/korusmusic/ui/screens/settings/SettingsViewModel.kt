@@ -8,16 +8,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import li.auna.korusmusic.domain.model.User
 import li.auna.korusmusic.domain.repository.AuthRepository
+import li.auna.korusmusic.data.preferences.PreferencesManager
 
 class SettingsViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _settingsState = MutableStateFlow(SettingsState())
     val settingsState: StateFlow<SettingsState> = _settingsState.asStateFlow()
+    
+    private val _serverUrl = MutableStateFlow("")
+    val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
 
     init {
         loadCurrentUser()
+        loadServerUrl()
     }
 
     private fun loadCurrentUser() {
@@ -35,6 +41,14 @@ class SettingsViewModel(
                     isLoading = false,
                     error = e.message ?: "Failed to load user info"
                 )
+            }
+        }
+    }
+    
+    private fun loadServerUrl() {
+        viewModelScope.launch {
+            preferencesManager.serverUrl.collect { url ->
+                _serverUrl.value = url
             }
         }
     }
@@ -85,6 +99,36 @@ class SettingsViewModel(
         val current = _settingsState.value.autoDownloadOnWiFi
         _settingsState.value = _settingsState.value.copy(autoDownloadOnWiFi = !current)
         // In a real app, you might save this to SharedPreferences or DataStore
+    }
+    
+    fun setServerUrl(url: String) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.setServerUrl(url)
+                _settingsState.value = _settingsState.value.copy(
+                    error = null
+                )
+            } catch (e: Exception) {
+                _settingsState.value = _settingsState.value.copy(
+                    error = "Failed to set server URL: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    fun resetServerUrl() {
+        viewModelScope.launch {
+            try {
+                preferencesManager.resetServerUrl()
+                _settingsState.value = _settingsState.value.copy(
+                    error = null
+                )
+            } catch (e: Exception) {
+                _settingsState.value = _settingsState.value.copy(
+                    error = "Failed to reset server URL: ${e.message}"
+                )
+            }
+        }
     }
 }
 

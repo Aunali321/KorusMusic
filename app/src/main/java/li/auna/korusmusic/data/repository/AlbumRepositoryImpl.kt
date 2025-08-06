@@ -8,12 +8,12 @@ import androidx.room.withTransaction
 import li.auna.korusmusic.data.database.KorusDatabase
 import li.auna.korusmusic.data.mapper.toDomainModel
 import li.auna.korusmusic.data.mapper.toEntity
-import li.auna.korusmusic.data.network.KorusApiService
+import li.auna.korusmusic.data.network.KorusApiServiceProvider
 import li.auna.korusmusic.domain.model.Album
 import li.auna.korusmusic.domain.repository.AlbumRepository
 
 class AlbumRepositoryImpl(
-    private val apiService: KorusApiService,
+    private val apiServiceProvider: KorusApiServiceProvider,
     private val database: KorusDatabase,
     private val ioDispatcher: CoroutineDispatcher
 ) : AlbumRepository {
@@ -91,7 +91,7 @@ class AlbumRepositoryImpl(
     override suspend fun syncAlbums() {
         withContext(ioDispatcher) {
             try {
-                val albums = apiService.getAlbums(limit = 1000)
+                val albums = apiServiceProvider.getApiService().getAlbums(limit = 1000)
                 
                 database.withTransaction {
                     // First sync artists
@@ -116,7 +116,7 @@ class AlbumRepositoryImpl(
     override suspend fun likeAlbum(albumId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.likeAlbum(albumId)
+                apiServiceProvider.getApiService().likeAlbum(albumId)
                 database.albumDao().updateLikedStatus(albumId, true)
             } catch (e: Exception) {
                 // Handle error - could show toast or retry
@@ -128,7 +128,7 @@ class AlbumRepositoryImpl(
     override suspend fun unlikeAlbum(albumId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.unlikeAlbum(albumId)
+                apiServiceProvider.getApiService().unlikeAlbum(albumId)
                 database.albumDao().updateLikedStatus(albumId, false)
             } catch (e: Exception) {
                 // Handle error - could show toast or retry

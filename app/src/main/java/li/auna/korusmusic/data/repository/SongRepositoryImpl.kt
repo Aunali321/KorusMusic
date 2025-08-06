@@ -8,14 +8,14 @@ import androidx.room.withTransaction
 import li.auna.korusmusic.data.database.KorusDatabase
 import li.auna.korusmusic.data.mapper.toDomainModel
 import li.auna.korusmusic.data.mapper.toEntity
-import li.auna.korusmusic.data.network.KorusApiService
+import li.auna.korusmusic.data.network.KorusApiServiceProvider
 import li.auna.korusmusic.data.network.dto.AddSongsToPlaylistRequest
 import li.auna.korusmusic.data.network.dto.RemoveSongsFromPlaylistRequest
 import li.auna.korusmusic.domain.model.Song
 import li.auna.korusmusic.domain.repository.SongRepository
 
 class SongRepositoryImpl(
-    private val apiService: KorusApiService,
+    private val apiServiceProvider: KorusApiServiceProvider,
     private val database: KorusDatabase,
     private val ioDispatcher: CoroutineDispatcher
 ) : SongRepository {
@@ -113,7 +113,7 @@ class SongRepositoryImpl(
         withContext(ioDispatcher) {
             try {
                 // Get all albums with their songs in a single call
-                val albums = apiService.getAlbums(limit = 1000)
+                val albums = apiServiceProvider.getApiService().getAlbums(limit = 1000)
                 val allSongs = mutableListOf<li.auna.korusmusic.data.network.dto.SongDto>()
                 
                 // Extract songs from albums (no need for separate API calls)
@@ -140,7 +140,7 @@ class SongRepositoryImpl(
         withContext(ioDispatcher) {
             try {
                 val idsString = songIds.joinToString(",")
-                val songs = apiService.getSongs(ids = idsString)
+                val songs = apiServiceProvider.getApiService().getSongs(ids = idsString)
                 database.songDao().insertSongs(songs.map { it.toEntity() })
             } catch (e: Exception) {
                 // Log error but don't throw
@@ -151,7 +151,7 @@ class SongRepositoryImpl(
     override suspend fun likeSong(songId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.likeSongs(AddSongsToPlaylistRequest(listOf(songId)))
+                apiServiceProvider.getApiService().likeSongs(AddSongsToPlaylistRequest(listOf(songId)))
                 database.songDao().updateLikedStatus(songId, true)
             } catch (e: Exception) {
                 // Handle error
@@ -162,7 +162,7 @@ class SongRepositoryImpl(
     override suspend fun unlikeSong(songId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.unlikeSongs(RemoveSongsFromPlaylistRequest(listOf(songId)))
+                apiServiceProvider.getApiService().unlikeSongs(RemoveSongsFromPlaylistRequest(listOf(songId)))
                 database.songDao().updateLikedStatus(songId, false)
             } catch (e: Exception) {
                 // Handle error

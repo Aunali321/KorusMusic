@@ -12,12 +12,14 @@ import li.auna.korusmusic.domain.repository.AlbumRepository
 import li.auna.korusmusic.domain.repository.ArtistRepository
 import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.domain.repository.SongRepository
+import li.auna.korusmusic.data.DataManager
 
 class HomeViewModel(
     private val songRepository: SongRepository,
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
-    private val playlistRepository: PlaylistRepository
+    private val playlistRepository: PlaylistRepository,
+    private val dataManager: DataManager
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(HomeState())
@@ -32,13 +34,7 @@ class HomeViewModel(
             _homeState.value = _homeState.value.copy(isLoading = true)
             
             try {
-                // First, sync data from all repositories
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
-                
-                // Then collect data from different sources
+                // Collect data from different sources (repositories handle their own sync)
                 combine(
                     songRepository.getRecentlyPlayedSongs(10),
                     albumRepository.getRecentlyAddedAlbums(10),
@@ -65,20 +61,7 @@ class HomeViewModel(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            try {
-                // Sync all repositories
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
-                loadHomeData()
-            } catch (e: Exception) {
-                _homeState.value = _homeState.value.copy(
-                    error = e.message ?: "Failed to refresh data"
-                )
-            }
-        }
+        dataManager.refresh()
     }
 
     fun clearError() {

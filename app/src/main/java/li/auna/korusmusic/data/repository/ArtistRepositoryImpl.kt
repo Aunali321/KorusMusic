@@ -8,12 +8,12 @@ import androidx.room.withTransaction
 import li.auna.korusmusic.data.database.KorusDatabase
 import li.auna.korusmusic.data.mapper.toDomainModel
 import li.auna.korusmusic.data.mapper.toEntity
-import li.auna.korusmusic.data.network.KorusApiService
+import li.auna.korusmusic.data.network.KorusApiServiceProvider
 import li.auna.korusmusic.domain.model.Artist
 import li.auna.korusmusic.domain.repository.ArtistRepository
 
 class ArtistRepositoryImpl(
-    private val apiService: KorusApiService,
+    private val apiServiceProvider: KorusApiServiceProvider,
     private val database: KorusDatabase,
     private val ioDispatcher: CoroutineDispatcher
 ) : ArtistRepository {
@@ -41,7 +41,7 @@ class ArtistRepositoryImpl(
     override suspend fun syncArtists() {
         withContext(ioDispatcher) {
             try {
-                val artists = apiService.getArtists(limit = 1000)
+                val artists = apiServiceProvider.getApiService().getArtists(limit = 1000)
                 
                 database.withTransaction {
                     // Sync artists first
@@ -69,7 +69,7 @@ class ArtistRepositoryImpl(
     override suspend fun followArtist(artistId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.followArtist(artistId)
+                apiServiceProvider.getApiService().followArtist(artistId)
                 database.artistDao().updateFollowedStatus(artistId, true)
             } catch (e: Exception) {
                 // Handle error - could show toast or retry
@@ -81,7 +81,7 @@ class ArtistRepositoryImpl(
     override suspend fun unfollowArtist(artistId: Long) {
         withContext(ioDispatcher) {
             try {
-                apiService.unfollowArtist(artistId)
+                apiServiceProvider.getApiService().unfollowArtist(artistId)
                 database.artistDao().updateFollowedStatus(artistId, false)
             } catch (e: Exception) {
                 // Handle error - could show toast or retry
