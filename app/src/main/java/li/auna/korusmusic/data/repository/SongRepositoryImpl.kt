@@ -112,22 +112,12 @@ class SongRepositoryImpl(
     override suspend fun syncSongs() {
         withContext(ioDispatcher) {
             try {
-                // Get all albums with their songs in a single call
-                val albums = apiServiceProvider.getApiService().getAlbums(limit = 1000)
-                val allSongs = mutableListOf<li.auna.korusmusic.data.network.dto.SongDto>()
+                // Get all songs directly from the songs endpoint
+                val songs = apiServiceProvider.getApiService().getSongs(limit = 1000)
                 
-                // Extract songs from albums (no need for separate API calls)
-                albums.forEach { album ->
-                    allSongs.addAll(album.songs)
-                }
-
                 database.withTransaction {
-                    // First sync artists and albums
-                    database.artistDao().insertArtists(albums.mapNotNull { it.artist?.toEntity() })
-                    database.albumDao().insertAlbums(albums.map { it.toEntity() })
-                    
-                    // Then sync songs
-                    database.songDao().insertSongs(allSongs.map { it.toEntity() })
+                    // Sync songs
+                    database.songDao().insertSongs(songs.map { it.toEntity() })
                 }
             } catch (e: Exception) {
                 // Log error and rethrow so UI can handle it properly

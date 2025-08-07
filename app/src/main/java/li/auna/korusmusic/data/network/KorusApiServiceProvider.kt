@@ -32,8 +32,9 @@ class KorusApiServiceProvider(
     }
     
     private fun createApiService(baseUrl: String): KorusApiService {
+        val apiBaseUrl = if (baseUrl.endsWith("/")) "${baseUrl}api/" else "${baseUrl}/api/"
         return Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(apiBaseUrl)
             .client(httpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

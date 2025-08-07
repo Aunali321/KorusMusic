@@ -17,6 +17,7 @@ import li.auna.korusmusic.domain.model.Song
 import li.auna.korusmusic.domain.repository.SongRepository
 import li.auna.korusmusic.data.preferences.PreferencesManager
 import kotlinx.coroutines.runBlocking
+import android.util.Log
 
 class PlayerManagerImpl(
     private val exoPlayer: ExoPlayer,
@@ -42,7 +43,9 @@ class PlayerManagerImpl(
     }
 
     override fun play() {
+        Log.d("PlayerManager", "play() called - current state: isPlaying=${exoPlayer.isPlaying}, playWhenReady=${exoPlayer.playWhenReady}")
         exoPlayer.play()
+        Log.d("PlayerManager", "play() after - isPlaying=${exoPlayer.isPlaying}, playWhenReady=${exoPlayer.playWhenReady}")
     }
 
     override fun pause() {
@@ -70,6 +73,7 @@ class PlayerManagerImpl(
             createMediaItem(song)
         }
         
+        Log.d("PlayerManager", "setQueue: ${songs.size} songs, startIndex: $startIndex")
         exoPlayer.setMediaItems(mediaItems, startIndex, 0L)
         exoPlayer.prepare()
         
@@ -78,6 +82,9 @@ class PlayerManagerImpl(
             currentIndex = startIndex,
             currentSong = songs.getOrNull(startIndex)
         )
+        
+        Log.d("PlayerManager", "Queue set, auto-playing...")
+        exoPlayer.play()
     }
 
     override fun addToQueue(song: Song) {
@@ -173,6 +180,7 @@ class PlayerManagerImpl(
 
     // Player.Listener implementations
     override fun onIsPlayingChanged(isPlaying: Boolean) {
+        Log.d("PlayerManager", "onIsPlayingChanged: $isPlaying")
         _playerState.value = _playerState.value.copy(isPlaying = isPlaying)
         
         if (isPlaying) {
@@ -197,6 +205,7 @@ class PlayerManagerImpl(
     }
 
     override fun onPlayerError(error: PlaybackException) {
+        Log.e("PlayerManager", "Player error: ${error.message}", error)
         _playerState.value = _playerState.value.copy(
             error = error.message,
             isLoading = false

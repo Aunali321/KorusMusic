@@ -31,25 +31,24 @@ class HomeViewModel(
 
     private fun loadHomeData() {
         viewModelScope.launch {
-            _homeState.value = _homeState.value.copy(isLoading = true)
-            
             try {
-                // Collect data from different sources (repositories handle their own sync)
+                // Combine data from repositories and sync status
                 combine(
                     songRepository.getRecentlyPlayedSongs(10),
                     albumRepository.getRecentlyAddedAlbums(10),
-                    songRepository.getAllSongs()
-                ) { recentlyPlayed, recentAlbums, allSongs ->
-                    HomeData(
-                        recentlyPlayed = recentlyPlayed,
-                        recentlyAdded = allSongs.sortedByDescending { it.dateAdded }.take(10),
-                        recommendedAlbums = recentAlbums
+                    songRepository.getAllSongs(),
+                    dataManager.isSyncing
+                ) { recentlyPlayed, recentAlbums, allSongs, isSyncing ->
+                    HomeState(
+                        isLoading = isSyncing,
+                        homeData = HomeData(
+                            recentlyPlayed = recentlyPlayed,
+                            recentlyAdded = allSongs.sortedByDescending { it.dateAdded }.take(10),
+                            recommendedAlbums = recentAlbums
+                        )
                     )
-                }.collect { homeData ->
-                    _homeState.value = _homeState.value.copy(
-                        isLoading = false,
-                        homeData = homeData
-                    )
+                }.collect { newState ->
+                    _homeState.value = newState
                 }
             } catch (e: Exception) {
                 _homeState.value = _homeState.value.copy(

@@ -21,7 +21,7 @@ data class Song(
     val lastPlayed: String? = null
 ) {
     fun getStreamUrl(baseUrl: String): String {
-        return "${baseUrl}songs/$id/stream"
+        return "${baseUrl}api/songs/$id/stream"
     }
     
     fun getDurationFormatted(): String {

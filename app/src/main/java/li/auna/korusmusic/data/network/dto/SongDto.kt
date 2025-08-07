@@ -18,6 +18,5 @@ data class SongDto(
     val bitrate: Int? = null,
     val format: String,
     @SerialName("date_added") val dateAdded: String,
-    val artist: ArtistDto? = null,
-    val album: AlbumDto? = null
+    val artist: ArtistDto? = null
 )

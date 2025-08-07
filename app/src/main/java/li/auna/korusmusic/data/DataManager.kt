@@ -30,11 +30,11 @@ class DataManager(
             _isSyncing.value = true
             
             try {
-                // Sync all repositories in parallel
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
+                // Sync repositories sequentially to respect foreign key dependencies
+                artistRepository.syncArtists()    // First - no dependencies
+                albumRepository.syncAlbums()      // Second - depends on artists
+                songRepository.syncSongs()        // Third - depends on artists and albums  
+                playlistRepository.syncPlaylists() // Fourth - no dependencies but last
                 
                 _lastSyncTime.value = System.currentTimeMillis()
             } finally {
@@ -48,11 +48,11 @@ class DataManager(
             _isSyncing.value = true
             
             try {
-                // Sync all repositories in parallel
-                launch { songRepository.syncSongs() }
-                launch { albumRepository.syncAlbums() }
-                launch { artistRepository.syncArtists() }
-                launch { playlistRepository.syncPlaylists() }
+                // Sync repositories sequentially to respect foreign key dependencies
+                artistRepository.syncArtists()    // First - no dependencies
+                albumRepository.syncAlbums()      // Second - depends on artists
+                songRepository.syncSongs()        // Third - depends on artists and albums  
+                playlistRepository.syncPlaylists() // Fourth - no dependencies but last
                 
                 _lastSyncTime.value = System.currentTimeMillis()
             } finally {

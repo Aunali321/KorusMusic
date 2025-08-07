@@ -34,18 +34,17 @@ class LibraryViewModel(
 
     private fun loadLibraryData() {
         viewModelScope.launch {
-            _libraryState.value = _libraryState.value.copy(isLoading = true)
-            
             try {
-                // Collect data from all repositories (they handle their own sync)
+                // Combine data from repositories and sync status
                 combine(
                     songRepository.getAllSongs(),
                     albumRepository.getAllAlbums(),
                     artistRepository.getAllArtists(),
-                    playlistRepository.getAllPlaylists()
-                ) { songs, albums, artists, playlists ->
+                    playlistRepository.getAllPlaylists(),
+                    dataManager.isSyncing
+                ) { songs, albums, artists, playlists, isSyncing ->
                     LibraryState(
-                        isLoading = false,
+                        isLoading = isSyncing,
                         songs = songs,
                         albums = albums,
                         artists = artists,

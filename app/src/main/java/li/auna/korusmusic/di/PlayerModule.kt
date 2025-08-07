@@ -18,6 +18,7 @@ import org.koin.dsl.module
 import li.auna.korusmusic.player.PlayerManager
 import li.auna.korusmusic.player.PlayerManagerImpl
 import li.auna.korusmusic.player.PlayerServiceConnection
+import li.auna.korusmusic.data.auth.TokenManager
 import java.io.File
 
 val playerModule = module {
@@ -35,10 +36,14 @@ val playerModule = module {
     
     // Data source factory with caching
     single<DataSource.Factory> {
+        val tokenManager = get<TokenManager>()
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("KorusMusic/1.0")
             .setConnectTimeoutMs(30000)
             .setReadTimeoutMs(30000)
+            .setDefaultRequestProperties(mapOf(
+                "Authorization" to "Bearer ${kotlinx.coroutines.runBlocking { tokenManager.getAccessToken() }}"
+            ))
         
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(get())

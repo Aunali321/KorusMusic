@@ -215,7 +215,7 @@ fun PlaylistSongDto.toDomainModel(): PlaylistSong = PlaylistSong(
     position = position,
     song = song.toDomainModel(
         artist = song.artist?.toDomainModel() ?: Artist(id = song.artistId, name = "Unknown Artist"),
-        album = song.album?.toDomainModel() ?: Album(id = song.albumId, name = "Unknown Album", artistId = song.artistId, albumArtistId = song.artistId, dateAdded = "")
+        album = Album(id = song.albumId, name = "Unknown Album", artistId = song.artistId, albumArtistId = song.artistId, dateAdded = "")
     )
 )
 
