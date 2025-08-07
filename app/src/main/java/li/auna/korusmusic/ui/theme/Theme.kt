@@ -11,47 +11,36 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val GlassmorphismColorScheme = darkColorScheme(
+    primary = AccentBlue,
+    onPrimary = TextPrimary,
+    secondary = Zinc600,
+    onSecondary = TextSecondary,
+    tertiary = Zinc500,
+    onTertiary = TextTertiary,
+    background = Zinc950,
+    onBackground = TextPrimary,
+    surface = GlassSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = GlassSurfaceVariant,
+    onSurfaceVariant = TextTertiary,
+    outline = GlassBorder,
+    outlineVariant = GlassBorderLight,
+    primaryContainer = GlassSurface,
+    onPrimaryContainer = TextPrimary,
+    secondaryContainer = GlassSurfaceVariant,
+    onSecondaryContainer = TextSecondary,
+    error = AccentRed,
+    onError = TextPrimary
 )
 
 @Composable
 fun KorusMusicTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true, // Always use dark theme for glassmorphism
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = GlassmorphismColorScheme,
         typography = Typography,
         content = content
     )

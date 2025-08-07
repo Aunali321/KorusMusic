@@ -1,9 +1,11 @@
 package li.auna.korusmusic.ui.screens.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,6 +18,7 @@ import org.koin.androidx.compose.koinViewModel
 import li.auna.korusmusic.domain.model.Song
 import li.auna.korusmusic.ui.components.SongItem
 import li.auna.korusmusic.player.PlayerServiceConnection
+import li.auna.korusmusic.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,33 +35,40 @@ fun HomeScreen(
     val homeState by viewModel.homeState.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Zinc950)
     ) {
-        // Top App Bar
+        // Glass Top App Bar
         TopAppBar(
             title = {
                 Text(
                     text = "Korus Music",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.headlineSmall
                 )
             },
             actions = {
                 IconButton(onClick = onNavigateToSearch) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        contentDescription = "Search",
+                        tint = TextSecondary
                     )
                 }
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings"
+                        contentDescription = "Settings",
+                        tint = TextSecondary
                     )
                 }
             },
+            modifier = Modifier.glassTopAppBar(),
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = GlassSurface,
+                titleContentColor = TextPrimary
             )
         )
 
@@ -67,7 +77,9 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = AccentBlue
+                )
             }
         } else if (homeState.error != null) {
             Column(
@@ -80,19 +92,26 @@ fun HomeScreen(
                 Text(
                     text = "Error loading home data",
                     style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = AccentRed,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = homeState.error ?: "Unknown error",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = TextSecondary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 Button(
                     onClick = { viewModel.refresh() },
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .glassSurface(shape = RoundedCornerShape(8.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue,
+                        contentColor = TextPrimary
+                    )
                 ) {
-                    Text("Retry")
+                    Text("Retry", fontWeight = FontWeight.Medium)
                 }
             }
         } else {
@@ -135,36 +154,43 @@ fun HomeScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = onNavigateToLibrary
+                        onClick = onNavigateToLibrary,
+                        colors = glassCardColors(),
+                        elevation = glassCardElevation(),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LibraryMusic,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = AccentBlue,
+                                modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
                                 Text(
                                     text = "Your Library",
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
                                 )
                                 Text(
                                     text = "Browse your music collection",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = TextSecondary,
+                                    modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.weight(1f))
                             Icon(
                                 imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = TextTertiary
                             )
                         }
                     }
@@ -205,22 +231,27 @@ private fun HomeSection(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
             TextButton(onClick = onSeeAllClick) {
-                Text("See All")
+                Text(
+                    "See All",
+                    color = AccentBlue,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(songs.take(10)) { song ->
                 SongItem(
                     song = song,
                     onClick = { onSongClick(song, songs) },
-                    modifier = Modifier.width(280.dp)
+                    modifier = Modifier.width(300.dp)
                 )
             }
         }
@@ -237,12 +268,15 @@ private fun MiniPlayer(
 ) {
     Card(
         modifier = modifier,
-        onClick = onExpand
+        onClick = onExpand,
+        colors = glassCardColors(),
+        elevation = glassCardElevation(),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -250,20 +284,31 @@ private fun MiniPlayer(
             ) {
                 Text(
                     text = song.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1
                 )
                 Text(
                     text = song.artist.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                    maxLines = 1
                 )
             }
             
-            IconButton(onClick = onPlayPause) {
+            IconButton(
+                onClick = onPlayPause,
+                modifier = Modifier
+                    .size(48.dp)
+                    .glassSurfaceVariant(shape = RoundedCornerShape(12.dp))
+            ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play"
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = AccentBlue,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

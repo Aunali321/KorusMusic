@@ -1,6 +1,8 @@
 package li.auna.korusmusic.ui.screens.nowplaying
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import li.auna.korusmusic.player.PlayerServiceConnection
 import li.auna.korusmusic.player.RepeatMode
+import li.auna.korusmusic.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,56 +31,66 @@ fun NowPlayingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .background(Zinc950)
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar
+            // Glass Top Bar
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .glassSurface(shape = RoundedCornerShape(16.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Collapse"
+                        contentDescription = "Collapse",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 
                 Text(
                     text = "Now Playing",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
                 )
                 
                 IconButton(onClick = { /* TODO: More options */ }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More options"
+                        contentDescription = "More options",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Album Art Placeholder
-            Card(
+            // Glass Album Art Container
+            Box(
                 modifier = Modifier
-                    .size(280.dp)
-                    .aspectRatio(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                    .size(320.dp)
+                    .glassSurface(shape = RoundedCornerShape(24.dp))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .glassSurfaceVariant(shape = RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.MusicNote,
                         contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(120.dp),
+                        tint = TextTertiary
                     )
                 }
             }
@@ -88,61 +101,72 @@ fun NowPlayingScreen(
             playerState.currentSong?.let { song ->
                 Text(
                     text = song.title,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = TextPrimary
                 )
                 
                 Text(
                     text = song.artist.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextSecondary,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Progress Bar
+            // Progress Bar in Glass Container
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .glassSurface(shape = RoundedCornerShape(16.dp))
+                    .padding(20.dp)
             ) {
                 LinearProgressIndicator(
                     progress = if (playerState.duration > 0) {
                         (playerState.currentPosition.toFloat() / playerState.duration.toFloat())
                     } else 0f,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    color = AccentBlue,
+                    trackColor = GlassBorderLight
                 )
                 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = formatTime(playerState.currentPosition),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = formatTime(playerState.duration),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Control Buttons
+            // Glass Control Buttons
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .glassSurface(shape = RoundedCornerShape(20.dp))
+                    .padding(20.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -150,54 +174,76 @@ fun NowPlayingScreen(
                 IconButton(
                     onClick = { 
                         playerServiceConnection.setShuffleMode(!playerState.shuffleMode)
-                    }
+                    },
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Shuffle,
                         contentDescription = "Shuffle",
                         tint = if (playerState.shuffleMode) {
-                            MaterialTheme.colorScheme.primary
+                            AccentBlue
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                            TextTertiary
+                        },
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
                 // Previous
                 IconButton(
-                    onClick = { playerServiceConnection.seekToPrevious() }
+                    onClick = { playerServiceConnection.seekToPrevious() },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .glassSurfaceVariant(shape = RoundedCornerShape(16.dp))
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipPrevious,
                         contentDescription = "Previous",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp),
+                        tint = TextPrimary
                     )
                 }
 
-                // Play/Pause
-                FilledIconButton(
-                    onClick = { playerServiceConnection.togglePlayPause() },
-                    modifier = Modifier.size(64.dp)
+                // Play/Pause - Main Control
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .glassSurface(shape = RoundedCornerShape(20.dp))
+                        .background(
+                            AccentBlue.copy(alpha = 0.2f),
+                            RoundedCornerShape(20.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = if (playerState.isPlaying) {
-                            Icons.Default.Pause
-                        } else {
-                            Icons.Default.PlayArrow
-                        },
-                        contentDescription = if (playerState.isPlaying) "Pause" else "Play",
-                        modifier = Modifier.size(32.dp)
-                    )
+                    IconButton(
+                        onClick = { playerServiceConnection.togglePlayPause() },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = if (playerState.isPlaying) {
+                                Icons.Default.Pause
+                            } else {
+                                Icons.Default.PlayArrow
+                            },
+                            contentDescription = if (playerState.isPlaying) "Pause" else "Play",
+                            modifier = Modifier.size(36.dp),
+                            tint = AccentBlue
+                        )
+                    }
                 }
 
                 // Next
                 IconButton(
-                    onClick = { playerServiceConnection.seekToNext() }
+                    onClick = { playerServiceConnection.seekToNext() },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .glassSurfaceVariant(shape = RoundedCornerShape(16.dp))
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = "Next",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp),
+                        tint = TextPrimary
                     )
                 }
 
@@ -210,7 +256,8 @@ fun NowPlayingScreen(
                             RepeatMode.ONE -> RepeatMode.OFF
                         }
                         playerServiceConnection.setRepeatMode(nextMode)
-                    }
+                    },
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = when (playerState.repeatMode) {
@@ -219,10 +266,11 @@ fun NowPlayingScreen(
                         },
                         contentDescription = "Repeat",
                         tint = if (playerState.repeatMode != RepeatMode.OFF) {
-                            MaterialTheme.colorScheme.primary
+                            AccentBlue
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                            TextTertiary
+                        },
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -230,36 +278,50 @@ fun NowPlayingScreen(
             if (playerState.isLoading) {
                 Spacer(modifier = Modifier.height(16.dp))
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    color = AccentBlue,
+                    trackColor = GlassBorderLight
                 )
             }
         }
     } ?: run {
         // No player manager available
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Zinc950),
             contentAlignment = Alignment.Center
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .glassSurface(shape = RoundedCornerShape(20.dp))
+                    .padding(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.MusicOff,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier = Modifier.size(80.dp),
+                    tint = TextTertiary
                 )
                 Text(
                     text = "No music playing",
                     style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 16.dp)
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 20.dp)
                 )
                 Button(
                     onClick = onNavigateBack,
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier
+                        .padding(top = 20.dp)
+                        .glassSurface(shape = RoundedCornerShape(12.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue,
+                        contentColor = TextPrimary
+                    )
                 ) {
-                    Text("Go Back")
+                    Text("Go Back", fontWeight = FontWeight.Medium)
                 }
             }
         }
