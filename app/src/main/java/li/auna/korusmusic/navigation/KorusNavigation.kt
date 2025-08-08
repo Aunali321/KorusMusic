@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import org.koin.androidx.compose.koinViewModel
 import li.auna.korusmusic.data.auth.TokenManager
 import li.auna.korusmusic.ui.components.BottomNavigationBar
+import li.auna.korusmusic.ui.components.MiniPlayer
 import li.auna.korusmusic.ui.screens.home.HomeScreen
 import li.auna.korusmusic.ui.screens.library.LibraryScreen
 import li.auna.korusmusic.ui.screens.login.LoginScreen
@@ -33,6 +36,10 @@ fun KorusNavigation(
     val hasTokens by tokenManager.accessToken.collectAsState(initial = null)
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     
+    // Get player state for mini-player visibility
+    val playerManager by playerServiceConnection.playerManager.collectAsState()
+    val playerState by (playerManager?.playerState?.collectAsState() ?: mutableStateOf(li.auna.korusmusic.player.PlayerState()))
+    
     val startDestination = if (hasTokens != null) {
         KorusDestination.Home
     } else {
@@ -48,6 +55,20 @@ fun KorusNavigation(
         else -> false
     }
     
+    // Determine if we should show mini-player
+    val isNowPlayingScreen = currentBackStackEntry?.destination?.route == KorusDestination.NowPlaying::class.qualifiedName
+    val showMiniPlayer = hasTokens != null && 
+                        !isNowPlayingScreen && 
+                        playerState.currentSong != null
+    
+    // Calculate bottom padding based on what's showing
+    val bottomPadding = when {
+        showBottomNav && showMiniPlayer -> 160.dp // Both bottom nav (80dp) + mini player (80dp)
+        showBottomNav -> 80.dp // Just bottom nav
+        showMiniPlayer -> 80.dp // Just mini player  
+        else -> 0.dp // Neither
+    }
+    
     // Determine current destination for bottom nav highlighting
     val currentDestination = when (currentBackStackEntry?.destination?.route) {
         KorusDestination.Home::class.qualifiedName -> KorusDestination.Home
@@ -61,7 +82,7 @@ fun KorusNavigation(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = if (showBottomNav) Modifier.padding(bottom = 80.dp) else Modifier
+            modifier = Modifier.padding(bottom = bottomPadding)
         ) {
         composable<KorusDestination.Login> {
             LoginScreen(
@@ -187,6 +208,19 @@ fun KorusNavigation(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+        }
+        
+        // Mini Player (show above bottom nav when music is playing)
+        if (showMiniPlayer) {
+            MiniPlayer(
+                playerServiceConnection = playerServiceConnection,
+                onExpandToNowPlaying = {
+                    navController.navigate(KorusDestination.NowPlaying)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = if (showBottomNav) 80.dp else 0.dp)
+            )
         }
         
         // Bottom Navigation (only show on main screens)

@@ -1,5 +1,6 @@
 package li.auna.korusmusic.ui.screens.artistdetail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,32 +17,36 @@ import li.auna.korusmusic.domain.repository.SongRepository
 import li.auna.korusmusic.player.PlayerManager
 
 class ArtistDetailViewModel(
-    private val artistId: Long,
+    savedStateHandle: SavedStateHandle,
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
-    private val _artistDetailState = MutableStateFlow(ArtistDetailState())
-    val artistDetailState: StateFlow<ArtistDetailState> = _artistDetailState.asStateFlow()
+    private val currentArtistId: Long = savedStateHandle.get<Long>("artistId") ?: 0L
+
+    private val _artistState = MutableStateFlow(ArtistDetailState())
+    val artistState: StateFlow<ArtistDetailState> = _artistState.asStateFlow()
 
     init {
-        loadArtistDetails()
+        if (currentArtistId > 0) {
+            loadArtistDetails()
+        }
     }
 
     private fun loadArtistDetails() {
         viewModelScope.launch {
-            _artistDetailState.value = _artistDetailState.value.copy(isLoading = true)
+            _artistState.value = _artistState.value.copy(isLoading = true)
             
             try {
-                val artist = artistRepository.getArtist(artistId)
+                val artist = artistRepository.getArtist(currentArtistId)
                 
                 if (artist != null) {
                     // Collect data from multiple repositories
                     combine(
-                        albumRepository.getAlbumsByArtist(artistId),
-                        songRepository.getSongsByArtist(artistId)
+                        albumRepository.getAlbumsByArtist(currentArtistId),
+                        songRepository.getSongsByArtist(currentArtistId)
                     ) { albums, songs ->
                         ArtistDetailState(
                             isLoading = false,
@@ -50,16 +55,16 @@ class ArtistDetailViewModel(
                             topTracks = songs.sortedByDescending { it.playCount }.take(10)
                         )
                     }.collect { newState ->
-                        _artistDetailState.value = newState
+                        _artistState.value = newState
                     }
                 } else {
-                    _artistDetailState.value = _artistDetailState.value.copy(
+                    _artistState.value = _artistState.value.copy(
                         isLoading = false,
                         error = "Artist not found"
                     )
                 }
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to load artist details"
                 )
@@ -68,7 +73,7 @@ class ArtistDetailViewModel(
     }
 
     fun playTopTracks() {
-        val topTracks = _artistDetailState.value.topTracks
+        val topTracks = _artistState.value.topTracks
         if (topTracks.isNotEmpty()) {
             playerManager.setQueue(topTracks, 0)
             playerManager.play()
@@ -78,7 +83,7 @@ class ArtistDetailViewModel(
     fun shuffleAllSongs() {
         viewModelScope.launch {
             try {
-                val allSongs = songRepository.getSongsByArtist(artistId)
+                val allSongs = songRepository.getSongsByArtist(currentArtistId)
                 allSongs.collect { songs ->
                     if (songs.isNotEmpty()) {
                         playerManager.setQueue(songs.shuffled(), 0)
@@ -86,7 +91,7 @@ class ArtistDetailViewModel(
                     }
                 }
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to play artist songs"
                 )
             }
@@ -94,7 +99,7 @@ class ArtistDetailViewModel(
     }
 
     fun playSong(song: Song) {
-        val topTracks = _artistDetailState.value.topTracks
+        val topTracks = _artistState.value.topTracks
         val index = topTracks.indexOf(song)
         if (index >= 0) {
             playerManager.setQueue(topTracks, index)
@@ -117,7 +122,7 @@ class ArtistDetailViewModel(
                     }
                 }
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to play album"
                 )
             }
@@ -131,10 +136,10 @@ class ArtistDetailViewModel(
     fun followArtist() {
         viewModelScope.launch {
             try {
-                artistRepository.followArtist(artistId)
+                artistRepository.followArtist(currentArtistId)
                 // The artist state will be updated through the repository flow
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to follow artist"
                 )
             }
@@ -144,10 +149,10 @@ class ArtistDetailViewModel(
     fun unfollowArtist() {
         viewModelScope.launch {
             try {
-                artistRepository.unfollowArtist(artistId)
+                artistRepository.unfollowArtist(currentArtistId)
                 // The artist state will be updated through the repository flow
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to unfollow artist"
                 )
             }
@@ -159,7 +164,7 @@ class ArtistDetailViewModel(
             try {
                 songRepository.likeSong(songId)
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to like song"
                 )
             }
@@ -171,7 +176,7 @@ class ArtistDetailViewModel(
             try {
                 songRepository.unlikeSong(songId)
             } catch (e: Exception) {
-                _artistDetailState.value = _artistDetailState.value.copy(
+                _artistState.value = _artistState.value.copy(
                     error = e.message ?: "Failed to unlike song"
                 )
             }
@@ -183,7 +188,7 @@ class ArtistDetailViewModel(
     }
 
     fun clearError() {
-        _artistDetailState.value = _artistDetailState.value.copy(error = null)
+        _artistState.value = _artistState.value.copy(error = null)
     }
 }
 

@@ -136,14 +136,15 @@ fun SearchScreen(
                 }
             }
             searchState.error != null -> {
+                val error = searchState.error
                 ErrorSearchState(
-                    error = searchState.error,
+                    error = error ?: "Unknown error",
                     onRetry = { viewModel.search(searchQuery) }
                 )
             }
             else -> {
-                SearchResults(
-                    searchResult = searchState.searchResult,
+                SearchResultsContent(
+                    searchResults = searchState.searchResults,
                     onSongClick = { song, songs ->
                         val songIndex = songs.indexOf(song)
                         playerServiceConnection.setQueue(songs, songIndex)
@@ -232,20 +233,19 @@ private fun ErrorSearchState(
 }
 
 @Composable
-private fun SearchResults(
-    searchResult: li.auna.korusmusic.domain.model.SearchResult?,
+private fun SearchResultsContent(
+    searchResults: SearchResults,
     onSongClick: (li.auna.korusmusic.domain.model.Song, List<li.auna.korusmusic.domain.model.Song>) -> Unit,
     onAlbumClick: (Long) -> Unit,
     onArtistClick: (Long) -> Unit
 ) {
-    if (searchResult == null) return
     
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Songs Section
-        if (searchResult.songs.isNotEmpty()) {
+        if (searchResults.songs.isNotEmpty()) {
             item {
                 Text(
                     text = "Songs",
@@ -255,21 +255,21 @@ private fun SearchResults(
                 )
             }
             
-            items(searchResult.songs.take(5)) { song ->
+            items(searchResults.songs.take(5)) { song ->
                 SongItem(
                     song = song,
-                    onClick = { onSongClick(song, searchResult.songs) }
+                    onClick = { onSongClick(song, searchResults.songs) }
                 )
             }
             
-            if (searchResult.songs.size > 5) {
+            if (searchResults.songs.size > 5) {
                 item {
                     TextButton(
                         onClick = { /* TODO: Show all songs */ },
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            "Show ${searchResult.songs.size - 5} more songs",
+                            "Show ${searchResults.songs.size - 5} more songs",
                             color = AccentBlue,
                             fontWeight = FontWeight.Medium
                         )
@@ -279,7 +279,7 @@ private fun SearchResults(
         }
         
         // Albums Section
-        if (searchResult.albums.isNotEmpty()) {
+        if (searchResults.albums.isNotEmpty()) {
             item {
                 Text(
                     text = "Albums",
@@ -289,7 +289,7 @@ private fun SearchResults(
                 )
             }
             
-            items(searchResult.albums.take(3)) { album ->
+            items(searchResults.albums.take(3)) { album ->
                 AlbumSearchItem(
                     album = album,
                     onClick = { onAlbumClick(album.id) }
@@ -298,7 +298,7 @@ private fun SearchResults(
         }
         
         // Artists Section
-        if (searchResult.artists.isNotEmpty()) {
+        if (searchResults.artists.isNotEmpty()) {
             item {
                 Text(
                     text = "Artists",
@@ -308,7 +308,7 @@ private fun SearchResults(
                 )
             }
             
-            items(searchResult.artists.take(3)) { artist ->
+            items(searchResults.artists.take(3)) { artist ->
                 ArtistSearchItem(
                     artist = artist,
                     onClick = { onArtistClick(artist.id) }
@@ -317,7 +317,7 @@ private fun SearchResults(
         }
         
         // No results message
-        if (searchResult.songs.isEmpty() && searchResult.albums.isEmpty() && searchResult.artists.isEmpty()) {
+        if (searchResults.songs.isEmpty() && searchResults.albums.isEmpty() && searchResults.artists.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier

@@ -32,10 +32,6 @@ fun ArtistDetailScreen(
 ) {
     val artistState by viewModel.artistState.collectAsState()
     
-    LaunchedEffect(artistId) {
-        viewModel.loadArtist(artistId)
-    }
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,28 +77,32 @@ fun ArtistDetailScreen(
                 }
             }
             artistState.error != null -> {
+                val error = artistState.error
                 ErrorContent(
-                    error = artistState.error,
-                    onRetry = { viewModel.loadArtist(artistId) }
+                    error = error ?: "Unknown error",
+                    onRetry = { viewModel.refresh() }
                 )
             }
             artistState.artist != null -> {
+                val artist = artistState.artist ?: return
                 ArtistContent(
-                    artist = artistState.artist,
+                    artist = artist,
+                    albums = artistState.albums,
+                    topTracks = artistState.topTracks,
                     onPlayTopTracks = {
-                        val topTracks = artistState.artist.topTracks ?: emptyList()
+                        val topTracks = artistState.topTracks
                         if (topTracks.isNotEmpty()) {
                             playerServiceConnection.setQueue(topTracks, 0)
                         }
                     },
                     onShufflePlay = {
-                        val topTracks = artistState.artist.topTracks ?: emptyList()
+                        val topTracks = artistState.topTracks
                         if (topTracks.isNotEmpty()) {
                             playerServiceConnection.setQueue(topTracks.shuffled(), 0)
                         }
                     },
                     onSongClick = { song ->
-                        val topTracks = artistState.artist.topTracks ?: emptyList()
+                        val topTracks = artistState.topTracks
                         val songIndex = topTracks.indexOf(song)
                         if (songIndex >= 0) {
                             playerServiceConnection.setQueue(topTracks, songIndex)
@@ -118,6 +118,8 @@ fun ArtistDetailScreen(
 @Composable
 private fun ArtistContent(
     artist: li.auna.korusmusic.domain.model.Artist,
+    albums: List<li.auna.korusmusic.domain.model.Album>,
+    topTracks: List<li.auna.korusmusic.domain.model.Song>,
     onPlayTopTracks: () -> Unit,
     onShufflePlay: () -> Unit,
     onSongClick: (li.auna.korusmusic.domain.model.Song) -> Unit,
@@ -222,10 +224,7 @@ private fun ArtistContent(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = TextPrimary
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = null,
-                        width = 1.dp
-                    ),
+                    border = ButtonDefaults.outlinedButtonBorder,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -244,8 +243,7 @@ private fun ArtistContent(
         }
         
         // Top Tracks Section
-        artist.topTracks?.let { topTracks ->
-            if (topTracks.isNotEmpty()) {
+        if (topTracks.isNotEmpty()) {
                 item {
                     Text(
                         text = "Popular",
@@ -278,12 +276,10 @@ private fun ArtistContent(
                         }
                     }
                 }
-            }
         }
         
         // Albums Section
-        artist.albums?.let { albums ->
-            if (albums.isNotEmpty()) {
+        if (albums.isNotEmpty()) {
                 item {
                     Row(
                         modifier = Modifier
@@ -324,7 +320,6 @@ private fun ArtistContent(
                         }
                     }
                 }
-            }
         }
     }
 }

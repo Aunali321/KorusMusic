@@ -30,10 +30,6 @@ fun PlaylistDetailScreen(
 ) {
     val playlistState by viewModel.playlistState.collectAsState()
     
-    LaunchedEffect(playlistId) {
-        viewModel.loadPlaylist(playlistId)
-    }
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -79,28 +75,32 @@ fun PlaylistDetailScreen(
                 }
             }
             playlistState.error != null -> {
+                val error = playlistState.error
                 ErrorContent(
-                    error = playlistState.error,
-                    onRetry = { viewModel.loadPlaylist(playlistId) }
+                    error = error ?: "Unknown error",
+                    onRetry = { viewModel.refresh() }
                 )
             }
             playlistState.playlist != null -> {
+                val playlist = playlistState.playlist ?: return
+                val playlistSongs = playlistState.playlistSongs
                 PlaylistContent(
-                    playlist = playlistState.playlist,
+                    playlist = playlist,
+                    playlistSongs = playlistSongs,
                     onPlayPlaylist = {
-                        val songs = playlistState.playlist.songs?.map { it.song } ?: emptyList()
+                        val songs = playlistSongs.map { it.song }
                         if (songs.isNotEmpty()) {
                             playerServiceConnection.setQueue(songs, 0)
                         }
                     },
                     onShufflePlay = {
-                        val songs = playlistState.playlist.songs?.map { it.song } ?: emptyList()
+                        val songs = playlistSongs.map { it.song }
                         if (songs.isNotEmpty()) {
                             playerServiceConnection.setQueue(songs.shuffled(), 0)
                         }
                     },
                     onSongClick = { song ->
-                        val songs = playlistState.playlist.songs?.map { it.song } ?: emptyList()
+                        val songs = playlistSongs.map { it.song }
                         val songIndex = songs.indexOf(song)
                         if (songIndex >= 0) {
                             playerServiceConnection.setQueue(songs, songIndex)
@@ -115,6 +115,7 @@ fun PlaylistDetailScreen(
 @Composable
 private fun PlaylistContent(
     playlist: li.auna.korusmusic.domain.model.Playlist,
+    playlistSongs: List<li.auna.korusmusic.domain.model.PlaylistSong>,
     onPlayPlaylist: () -> Unit,
     onShufflePlay: () -> Unit,
     onSongClick: (li.auna.korusmusic.domain.model.Song) -> Unit
@@ -187,9 +188,9 @@ private fun PlaylistContent(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    playlist.songs?.let { songs ->
+                    if (playlistSongs.isNotEmpty()) {
                         Text(
-                            text = "${songs.size} songs",
+                            text = "${playlistSongs.size} songs",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
@@ -243,10 +244,7 @@ private fun PlaylistContent(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = TextPrimary
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = null,
-                        width = 1.dp
-                    ),
+                    border = ButtonDefaults.outlinedButtonBorder,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -267,10 +265,7 @@ private fun PlaylistContent(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = TextSecondary
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = null,
-                        width = 1.dp
-                    ),
+                    border = ButtonDefaults.outlinedButtonBorder,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -283,31 +278,29 @@ private fun PlaylistContent(
         }
         
         // Songs List
-        playlist.songs?.let { playlistSongs ->
-            if (playlistSongs.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Songs",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                }
-                
-                items(playlistSongs) { playlistSong ->
-                    PlaylistSongItem(
-                        playlistSong = playlistSong,
-                        onClick = { onSongClick(playlistSong.song) },
-                        onRemove = { /* TODO: Remove from playlist */ }
-                    )
-                }
-            } else {
-                item {
-                    EmptyPlaylistContent(
-                        onAddSongs = { /* TODO: Add songs to playlist */ }
-                    )
-                }
+        if (playlistSongs.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Songs",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+            
+            items(playlistSongs) { playlistSong ->
+                PlaylistSongItem(
+                    playlistSong = playlistSong,
+                    onClick = { onSongClick(playlistSong.song) },
+                    onRemove = { /* TODO: Remove from playlist */ }
+                )
+            }
+        } else {
+            item {
+                EmptyPlaylistContent(
+                    onAddSongs = { /* TODO: Add songs to playlist */ }
+                )
             }
         }
     }

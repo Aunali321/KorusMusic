@@ -31,10 +31,6 @@ fun AlbumDetailScreen(
 ) {
     val albumState by viewModel.albumState.collectAsState()
     
-    LaunchedEffect(albumId) {
-        viewModel.loadAlbum(albumId)
-    }
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -80,28 +76,31 @@ fun AlbumDetailScreen(
                 }
             }
             albumState.error != null -> {
+                val error = albumState.error
                 ErrorContent(
-                    error = albumState.error,
-                    onRetry = { viewModel.loadAlbum(albumId) }
+                    error = error ?: "Unknown error",
+                    onRetry = { viewModel.refresh() }
                 )
             }
             albumState.album != null -> {
+                val album = albumState.album ?: return
                 AlbumContent(
-                    album = albumState.album,
+                    album = album,
+                    songs = albumState.songs,
                     onPlayAlbum = {
-                        val songs = albumState.album.songs ?: emptyList()
+                        val songs = albumState.songs
                         if (songs.isNotEmpty()) {
                             playerServiceConnection.setQueue(songs, 0)
                         }
                     },
                     onShufflePlay = {
-                        val songs = albumState.album.songs ?: emptyList()
+                        val songs = albumState.songs
                         if (songs.isNotEmpty()) {
                             playerServiceConnection.setQueue(songs.shuffled(), 0)
                         }
                     },
                     onSongClick = { song ->
-                        val songs = albumState.album.songs ?: emptyList()
+                        val songs = albumState.songs
                         val songIndex = songs.indexOf(song)
                         if (songIndex >= 0) {
                             playerServiceConnection.setQueue(songs, songIndex)
@@ -117,6 +116,7 @@ fun AlbumDetailScreen(
 @Composable
 private fun AlbumContent(
     album: li.auna.korusmusic.domain.model.Album,
+    songs: List<li.auna.korusmusic.domain.model.Song>,
     onPlayAlbum: () -> Unit,
     onShufflePlay: () -> Unit,
     onSongClick: (li.auna.korusmusic.domain.model.Song) -> Unit,
@@ -189,7 +189,7 @@ private fun AlbumContent(
                         )
                     }
                     
-                    album.songs?.let { songs ->
+                    if (songs.isNotEmpty()) {
                         Text(
                             text = "${songs.size} songs",
                             style = MaterialTheme.typography.bodyMedium,
@@ -245,10 +245,7 @@ private fun AlbumContent(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = TextPrimary
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = null,
-                        width = 1.dp
-                    ),
+                    border = ButtonDefaults.outlinedButtonBorder,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -267,25 +264,23 @@ private fun AlbumContent(
         }
         
         // Songs List
-        album.songs?.let { songs ->
-            if (songs.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Songs",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                }
-                
-                items(songs) { song ->
-                    SongItem(
-                        song = song,
-                        onClick = { onSongClick(song) },
-                        showMoreButton = true
-                    )
-                }
+        if (songs.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Songs",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+            
+            items(songs) { song ->
+                SongItem(
+                    song = song,
+                    onClick = { onSongClick(song) },
+                    showMoreButton = true
+                )
             }
         }
     }

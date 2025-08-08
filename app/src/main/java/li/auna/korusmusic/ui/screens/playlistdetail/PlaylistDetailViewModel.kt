@@ -1,5 +1,6 @@
 package li.auna.korusmusic.ui.screens.playlistdetail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,40 +15,44 @@ import li.auna.korusmusic.domain.repository.SongRepository
 import li.auna.korusmusic.player.PlayerManager
 
 class PlaylistDetailViewModel(
-    private val playlistId: Long,
+    savedStateHandle: SavedStateHandle,
     private val playlistRepository: PlaylistRepository,
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
-    private val _playlistDetailState = MutableStateFlow(PlaylistDetailState())
-    val playlistDetailState: StateFlow<PlaylistDetailState> = _playlistDetailState.asStateFlow()
+    private val currentPlaylistId: Long = savedStateHandle.get<Long>("playlistId") ?: 0L
+
+    private val _playlistState = MutableStateFlow(PlaylistDetailState())
+    val playlistState: StateFlow<PlaylistDetailState> = _playlistState.asStateFlow()
 
     init {
-        loadPlaylistDetails()
+        if (currentPlaylistId > 0) {
+            loadPlaylistDetails()
+        }
     }
 
     private fun loadPlaylistDetails() {
         viewModelScope.launch {
-            _playlistDetailState.value = _playlistDetailState.value.copy(isLoading = true)
+            _playlistState.value = _playlistState.value.copy(isLoading = true)
             
             try {
-                val playlist = playlistRepository.getPlaylist(playlistId)
+                val playlist = playlistRepository.getPlaylist(currentPlaylistId)
                 
                 if (playlist != null) {
-                    _playlistDetailState.value = _playlistDetailState.value.copy(
+                    _playlistState.value = _playlistState.value.copy(
                         isLoading = false,
                         playlist = playlist,
                         playlistSongs = playlist.songs
                     )
                 } else {
-                    _playlistDetailState.value = _playlistDetailState.value.copy(
+                    _playlistState.value = _playlistState.value.copy(
                         isLoading = false,
                         error = "Playlist not found"
                     )
                 }
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to load playlist details"
                 )
@@ -56,7 +61,7 @@ class PlaylistDetailViewModel(
     }
 
     fun playPlaylist() {
-        val songs = _playlistDetailState.value.playlistSongs.map { it.song }
+        val songs = _playlistState.value.playlistSongs.map { it.song }
         if (songs.isNotEmpty()) {
             playerManager.setQueue(songs, 0)
             playerManager.play()
@@ -64,7 +69,7 @@ class PlaylistDetailViewModel(
     }
 
     fun shufflePlaylist() {
-        val songs = _playlistDetailState.value.playlistSongs.map { it.song }.shuffled()
+        val songs = _playlistState.value.playlistSongs.map { it.song }.shuffled()
         if (songs.isNotEmpty()) {
             playerManager.setQueue(songs, 0)
             playerManager.play()
@@ -72,7 +77,7 @@ class PlaylistDetailViewModel(
     }
 
     fun playSong(playlistSong: PlaylistSong) {
-        val songs = _playlistDetailState.value.playlistSongs.map { it.song }
+        val songs = _playlistState.value.playlistSongs.map { it.song }
         val index = songs.indexOf(playlistSong.song)
         if (index >= 0) {
             playerManager.setQueue(songs, index)
@@ -86,13 +91,13 @@ class PlaylistDetailViewModel(
 
     fun addSongsToPlaylist(songIds: List<Long>) {
         viewModelScope.launch {
-            _playlistDetailState.value = _playlistDetailState.value.copy(isLoading = true)
+            _playlistState.value = _playlistState.value.copy(isLoading = true)
             
             try {
-                playlistRepository.addSongsToPlaylist(playlistId, songIds)
+                playlistRepository.addSongsToPlaylist(currentPlaylistId, songIds)
                 loadPlaylistDetails() // Refresh to get updated list
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to add songs to playlist"
                 )
@@ -103,10 +108,10 @@ class PlaylistDetailViewModel(
     fun removeSongsFromPlaylist(songIds: List<Long>) {
         viewModelScope.launch {
             try {
-                playlistRepository.removeSongsFromPlaylist(playlistId, songIds)
+                playlistRepository.removeSongsFromPlaylist(currentPlaylistId, songIds)
                 loadPlaylistDetails() // Refresh to get updated list
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     error = e.message ?: "Failed to remove songs from playlist"
                 )
             }
@@ -116,10 +121,10 @@ class PlaylistDetailViewModel(
     fun reorderPlaylistSong(songId: Long, newPosition: Int) {
         viewModelScope.launch {
             try {
-                playlistRepository.reorderPlaylist(playlistId, songId, newPosition)
+                playlistRepository.reorderPlaylist(currentPlaylistId, songId, newPosition)
                 loadPlaylistDetails() // Refresh to get updated order
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     error = e.message ?: "Failed to reorder playlist"
                 )
             }
@@ -128,13 +133,13 @@ class PlaylistDetailViewModel(
 
     fun updatePlaylistInfo(name: String, description: String?, isPublic: Boolean) {
         viewModelScope.launch {
-            _playlistDetailState.value = _playlistDetailState.value.copy(isLoading = true)
+            _playlistState.value = _playlistState.value.copy(isLoading = true)
             
             try {
-                playlistRepository.updatePlaylist(playlistId, name, description, isPublic)
+                playlistRepository.updatePlaylist(currentPlaylistId, name, description, isPublic)
                 loadPlaylistDetails() // Refresh to get updated info
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to update playlist"
                 )
@@ -144,16 +149,16 @@ class PlaylistDetailViewModel(
 
     fun deletePlaylist() {
         viewModelScope.launch {
-            _playlistDetailState.value = _playlistDetailState.value.copy(isLoading = true)
+            _playlistState.value = _playlistState.value.copy(isLoading = true)
             
             try {
-                playlistRepository.deletePlaylist(playlistId)
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                playlistRepository.deletePlaylist(currentPlaylistId)
+                _playlistState.value = _playlistState.value.copy(
                     isLoading = false,
                     isDeleted = true
                 )
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to delete playlist"
                 )
@@ -166,7 +171,7 @@ class PlaylistDetailViewModel(
             try {
                 songRepository.likeSong(songId)
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     error = e.message ?: "Failed to like song"
                 )
             }
@@ -178,7 +183,7 @@ class PlaylistDetailViewModel(
             try {
                 songRepository.unlikeSong(songId)
             } catch (e: Exception) {
-                _playlistDetailState.value = _playlistDetailState.value.copy(
+                _playlistState.value = _playlistState.value.copy(
                     error = e.message ?: "Failed to unlike song"
                 )
             }
@@ -190,31 +195,31 @@ class PlaylistDetailViewModel(
     }
 
     fun clearError() {
-        _playlistDetailState.value = _playlistDetailState.value.copy(error = null)
+        _playlistState.value = _playlistState.value.copy(error = null)
     }
 
     // UI state management for editing mode
     fun toggleEditMode() {
-        val currentMode = _playlistDetailState.value.isEditMode
-        _playlistDetailState.value = _playlistDetailState.value.copy(isEditMode = !currentMode)
+        val currentMode = _playlistState.value.isEditMode
+        _playlistState.value = _playlistState.value.copy(isEditMode = !currentMode)
     }
 
     fun selectSong(playlistSong: PlaylistSong) {
-        val currentSelected = _playlistDetailState.value.selectedSongs.toMutableSet()
+        val currentSelected = _playlistState.value.selectedSongs.toMutableSet()
         if (currentSelected.contains(playlistSong)) {
             currentSelected.remove(playlistSong)
         } else {
             currentSelected.add(playlistSong)
         }
-        _playlistDetailState.value = _playlistDetailState.value.copy(selectedSongs = currentSelected)
+        _playlistState.value = _playlistState.value.copy(selectedSongs = currentSelected)
     }
 
     fun clearSelection() {
-        _playlistDetailState.value = _playlistDetailState.value.copy(selectedSongs = emptySet())
+        _playlistState.value = _playlistState.value.copy(selectedSongs = emptySet())
     }
 
     fun deleteSelectedSongs() {
-        val selectedSongIds = _playlistDetailState.value.selectedSongs.map { it.song.id }
+        val selectedSongIds = _playlistState.value.selectedSongs.map { it.song.id }
         if (selectedSongIds.isNotEmpty()) {
             removeSongsFromPlaylist(selectedSongIds)
             clearSelection()

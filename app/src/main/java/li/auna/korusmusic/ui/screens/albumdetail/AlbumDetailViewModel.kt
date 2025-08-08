@@ -1,5 +1,6 @@
 package li.auna.korusmusic.ui.screens.albumdetail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,44 +14,48 @@ import li.auna.korusmusic.domain.repository.SongRepository
 import li.auna.korusmusic.player.PlayerManager
 
 class AlbumDetailViewModel(
-    private val albumId: Long,
+    savedStateHandle: SavedStateHandle,
     private val albumRepository: AlbumRepository,
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
-    private val _albumDetailState = MutableStateFlow(AlbumDetailState())
-    val albumDetailState: StateFlow<AlbumDetailState> = _albumDetailState.asStateFlow()
+    private val currentAlbumId: Long = savedStateHandle.get<Long>("albumId") ?: 0L
+
+    private val _albumState = MutableStateFlow(AlbumDetailState())
+    val albumState: StateFlow<AlbumDetailState> = _albumState.asStateFlow()
 
     init {
-        loadAlbumDetails()
+        if (currentAlbumId > 0) {
+            loadAlbumDetails()
+        }
     }
 
     private fun loadAlbumDetails() {
         viewModelScope.launch {
-            _albumDetailState.value = _albumDetailState.value.copy(isLoading = true)
+            _albumState.value = _albumState.value.copy(isLoading = true)
             
             try {
-                val album = albumRepository.getAlbum(albumId)
-                val songs = songRepository.getSongsByAlbum(albumId)
+                val album = albumRepository.getAlbum(currentAlbumId)
+                val songs = songRepository.getSongsByAlbum(currentAlbumId)
                 
                 if (album != null) {
                     // Collect songs as flow to get real-time updates
                     songs.collect { songList ->
-                        _albumDetailState.value = _albumDetailState.value.copy(
+                        _albumState.value = _albumState.value.copy(
                             isLoading = false,
                             album = album,
                             songs = songList
                         )
                     }
                 } else {
-                    _albumDetailState.value = _albumDetailState.value.copy(
+                    _albumState.value = _albumState.value.copy(
                         isLoading = false,
                         error = "Album not found"
                     )
                 }
             } catch (e: Exception) {
-                _albumDetailState.value = _albumDetailState.value.copy(
+                _albumState.value = _albumState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to load album details"
                 )
@@ -59,7 +64,7 @@ class AlbumDetailViewModel(
     }
 
     fun playAlbum() {
-        val songs = _albumDetailState.value.songs
+        val songs = _albumState.value.songs
         if (songs.isNotEmpty()) {
             playerManager.setQueue(songs, 0)
             playerManager.play()
@@ -67,7 +72,7 @@ class AlbumDetailViewModel(
     }
 
     fun shuffleAlbum() {
-        val songs = _albumDetailState.value.songs
+        val songs = _albumState.value.songs
         if (songs.isNotEmpty()) {
             playerManager.setQueue(songs.shuffled(), 0)
             playerManager.play()
@@ -75,7 +80,7 @@ class AlbumDetailViewModel(
     }
 
     fun playSong(song: Song) {
-        val songs = _albumDetailState.value.songs
+        val songs = _albumState.value.songs
         val index = songs.indexOf(song)
         if (index >= 0) {
             playerManager.setQueue(songs, index)
@@ -90,10 +95,10 @@ class AlbumDetailViewModel(
     fun likeAlbum() {
         viewModelScope.launch {
             try {
-                albumRepository.likeAlbum(albumId)
+                albumRepository.likeAlbum(currentAlbumId)
                 // The album state will be updated through the repository flow
             } catch (e: Exception) {
-                _albumDetailState.value = _albumDetailState.value.copy(
+                _albumState.value = _albumState.value.copy(
                     error = e.message ?: "Failed to like album"
                 )
             }
@@ -103,10 +108,10 @@ class AlbumDetailViewModel(
     fun unlikeAlbum() {
         viewModelScope.launch {
             try {
-                albumRepository.unlikeAlbum(albumId)
+                albumRepository.unlikeAlbum(currentAlbumId)
                 // The album state will be updated through the repository flow
             } catch (e: Exception) {
-                _albumDetailState.value = _albumDetailState.value.copy(
+                _albumState.value = _albumState.value.copy(
                     error = e.message ?: "Failed to unlike album"
                 )
             }
@@ -118,7 +123,7 @@ class AlbumDetailViewModel(
             try {
                 songRepository.likeSong(songId)
             } catch (e: Exception) {
-                _albumDetailState.value = _albumDetailState.value.copy(
+                _albumState.value = _albumState.value.copy(
                     error = e.message ?: "Failed to like song"
                 )
             }
@@ -130,7 +135,7 @@ class AlbumDetailViewModel(
             try {
                 songRepository.unlikeSong(songId)
             } catch (e: Exception) {
-                _albumDetailState.value = _albumDetailState.value.copy(
+                _albumState.value = _albumState.value.copy(
                     error = e.message ?: "Failed to unlike song"
                 )
             }
@@ -142,7 +147,7 @@ class AlbumDetailViewModel(
     }
 
     fun clearError() {
-        _albumDetailState.value = _albumDetailState.value.copy(error = null)
+        _albumState.value = _albumState.value.copy(error = null)
     }
 }
 

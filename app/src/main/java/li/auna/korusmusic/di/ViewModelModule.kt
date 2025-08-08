@@ -20,14 +20,14 @@ val viewModelModule = module {
     viewModel { NowPlayingViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), get()) }
     
-    // Detail ViewModels with parameters
-    viewModel { (albumId: Long) ->
-        AlbumDetailViewModel(albumId, get(), get(), get())
+    // Detail ViewModels with SavedStateHandle
+    viewModel {
+        AlbumDetailViewModel(get(), get(), get(), get())
     }
-    viewModel { (artistId: Long) ->
-        ArtistDetailViewModel(artistId, get(), get(), get(), get())
+    viewModel {
+        ArtistDetailViewModel(get(), get(), get(), get(), get())
     }
-    viewModel { (playlistId: Long) ->
-        PlaylistDetailViewModel(playlistId, get(), get(), get())
+    viewModel {
+        PlaylistDetailViewModel(get(), get(), get(), get())
     }
 }
