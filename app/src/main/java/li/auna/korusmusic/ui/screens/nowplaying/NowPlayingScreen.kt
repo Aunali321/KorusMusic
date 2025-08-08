@@ -2,9 +2,11 @@ package li.auna.korusmusic.ui.screens.nowplaying
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,23 +43,32 @@ fun NowPlayingScreen(
     playerServiceConnection: PlayerServiceConnection = org.koin.androidx.compose.get()
 ) {
     val playerManager by playerServiceConnection.playerManager.collectAsState()
-    
+
     playerManager?.let { manager ->
         val playerState by manager.playerState.collectAsState()
-        
+
         // Extract dynamic colors from album art (placeholder - no actual image yet)
         val dynamicColorScheme = rememberDynamicColorScheme(null)
-        
+
         // Animated background color
         val animatedBackgroundColor by animateColorAsState(
             targetValue = dynamicColorScheme.backgroundColor,
             label = "background_color"
         )
-        
+
         // Bottom sheet state - Start fully collapsed (peek only)
         val bottomSheetPeekHeight = 88.dp
-        var bottomSheetOffset by remember { mutableFloatStateOf(1f) } // 0.0 = expanded, 1.0 = collapsed
-        
+        var bottomSheetTargetOffset by remember {
+            mutableFloatStateOf(1f) // 0.0 = expanded, 1.0 = collapsed
+        }
+        var isDragging by remember { mutableStateOf(false) }
+
+        val bottomSheetOffset by animateFloatAsState(
+            targetValue = bottomSheetTargetOffset,
+            animationSpec = if (isDragging) spring(stiffness = 2000f) else spring(),
+            label = "bottom_sheet_offset"
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -72,13 +83,19 @@ fun NowPlayingScreen(
                 bottomPeekPadding = bottomSheetPeekHeight,
                 modifier = Modifier.fillMaxSize()
             )
-            
+
             // Draggable Bottom Sheet
             DraggableBottomSheet(
                 playerState = playerState,
                 colorScheme = dynamicColorScheme,
                 offset = bottomSheetOffset,
-                onOffsetChange = { bottomSheetOffset = it },
+                onOffsetChange = { bottomSheetTargetOffset = it },
+                onDragStateChange = { isDragging = it },
+                onTabClick = { tabIndex ->
+                    if (tabIndex == 0) { // UP NEXT tab
+                        bottomSheetTargetOffset = 0f // Expand
+                    }
+                },
                 peekHeight = bottomSheetPeekHeight,
                 modifier = Modifier
                     .fillMaxSize()
@@ -158,14 +175,14 @@ private fun MainContent(
                     modifier = Modifier.size(28.dp)
                 )
             }
-            
+
             Text(
                 text = "Now Playing",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.onSurfaceColor
             )
-            
+
             IconButton(onClick = { /* TODO: More options */ }) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
@@ -175,10 +192,10 @@ private fun MainContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
- // Album Art - Smaller so everything fits on one screen
+
+        // Album Art - Smaller so everything fits on one screen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -205,9 +222,9 @@ private fun MainContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         // Song Info
         playerState.currentSong?.let { song ->
             Text(
@@ -219,7 +236,7 @@ private fun MainContent(
                 overflow = TextOverflow.Ellipsis,
                 color = colorScheme.onSurfaceColor
             )
-            
+
             Text(
                 text = song.artist.name,
                 style = MaterialTheme.typography.titleLarge,
@@ -230,9 +247,9 @@ private fun MainContent(
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         // Progress Bar
         Column(
             modifier = Modifier
@@ -251,7 +268,7 @@ private fun MainContent(
                 color = colorScheme.primaryColor,
                 trackColor = colorScheme.outlineVariantColor
             )
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -272,9 +289,9 @@ private fun MainContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Control Buttons
         Row(
             modifier = Modifier
@@ -289,7 +306,7 @@ private fun MainContent(
         ) {
             // Shuffle
             IconButton(
-                onClick = { 
+                onClick = {
                     playerServiceConnection.setShuffleMode(!playerState.shuffleMode)
                 },
                 modifier = Modifier.size(44.dp)
@@ -375,7 +392,7 @@ private fun MainContent(
 
             // Repeat
             IconButton(
-                onClick = { 
+                onClick = {
                     val nextMode = when (playerState.repeatMode) {
                         RepeatMode.OFF -> RepeatMode.ALL
                         RepeatMode.ALL -> RepeatMode.ONE
@@ -409,6 +426,8 @@ private fun DraggableBottomSheet(
     colorScheme: DynamicColorScheme,
     offset: Float,
     onOffsetChange: (Float) -> Unit,
+    onDragStateChange: (Boolean) -> Unit,
+    onTabClick: (Int) -> Unit = {},
     peekHeight: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -416,7 +435,7 @@ private fun DraggableBottomSheet(
     val density = LocalDensity.current
     // Full-height sheet; no dynamic measurement needed
     var headerHeightPx by remember { mutableFloatStateOf(0f) }
-    
+
     BoxWithConstraints(
         modifier = modifier
     ) {
@@ -438,17 +457,41 @@ private fun DraggableBottomSheet(
                     colorScheme = colorScheme,
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDrag = { _, dragAmount ->
-                            val newTop = (topYPx + dragAmount.y)
+                .pointerInput(collapsedTopPx, expandedTopPx) {
+                    var startDragOffset = 0f
+                    var accumulatedDrag = 0f
+                    var lastDragAmount = 0f
+                    var currentDragOffset = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = {
+                            onDragStateChange(true)
+                            startDragOffset = offset
+                            accumulatedDrag = 0f
+                            currentDragOffset = offset
+                            lastDragAmount = 0f
+                        },
+                        onVerticalDrag = { _, dragAmount ->
+                            lastDragAmount = dragAmount
+                            accumulatedDrag += dragAmount
                             val range = (collapsedTopPx - expandedTopPx).coerceAtLeast(1f)
-                            val newOffset = ((newTop - expandedTopPx) / range)
-                                .coerceIn(0f, 1f)
-                            onOffsetChange(newOffset)
+                            val offsetDelta = accumulatedDrag / range
+                            currentDragOffset = (startDragOffset + offsetDelta).coerceIn(0f, 1f)
+                            onOffsetChange(currentDragOffset)
                         },
                         onDragEnd = {
-                            val targetOffset = if (offset < 0.5f) 0f else 1f
+                            onDragStateChange(false)
+                           // Use the calculated drag position, not the animated offset
+                            val targetOffset = when {
+                                // Fast swipe up - expand
+                                lastDragAmount < -20f -> 0f
+                                // Fast swipe down - collapse
+                                lastDragAmount > 20f -> 1f
+                                // Position-based - if more than halfway up, expand
+                                currentDragOffset < 0.5f -> 0f
+                                // Otherwise collapse
+                                else -> 1f
+                            }
+
                             onOffsetChange(targetOffset)
                         }
                     )
@@ -476,7 +519,7 @@ private fun DraggableBottomSheet(
                             )
                     )
                 }
-                
+
                 // Tab Headers
                 Row(
                     modifier = Modifier
@@ -485,7 +528,10 @@ private fun DraggableBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TextButton(
-                        onClick = { selectedTab = 0 },
+                        onClick = {
+                            selectedTab = 0
+                            onTabClick(0)
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = if (selectedTab == 0) colorScheme.primaryColor else colorScheme.onSurfaceVariantColor
@@ -497,7 +543,7 @@ private fun DraggableBottomSheet(
                             fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
                         )
                     }
-                    
+
                     TextButton(
                         onClick = { selectedTab = 1 },
                         modifier = Modifier.weight(1f),
@@ -513,7 +559,7 @@ private fun DraggableBottomSheet(
                     }
                 }
             }
-            
+
             // Content area wrapped with a scrim that hides the first row underneath the peek
             Box(
                 modifier = Modifier
@@ -641,35 +687,24 @@ private fun QueueItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (isCurrentlyPlaying) 
-                    colorScheme.primaryColor.copy(alpha = 0.1f) 
-                else 
+                if (isCurrentlyPlaying)
+                    colorScheme.primaryColor.copy(alpha = 0.1f)
+                else
                     Color.Transparent
             )
             .clickable { /* TODO: Play this song */ }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Song icon
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .dynamicGlassSurfaceVariant(
-                    colorScheme = colorScheme,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = null,
-                tint = colorScheme.onSurfaceVariantColor,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        
+        // Album Art
+        CoverArtImage(
+            song = song,
+            size = 48.dp,
+            shape = RoundedCornerShape(8.dp)
+        )
+
         Spacer(modifier = Modifier.width(16.dp))
-        
+
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -690,7 +725,7 @@ private fun QueueItem(
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
-        
+
         if (isCurrentlyPlaying) {
             Icon(
                 imageVector = Icons.Default.GraphicEq,
