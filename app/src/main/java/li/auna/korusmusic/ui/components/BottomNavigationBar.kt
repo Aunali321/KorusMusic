@@ -46,13 +46,13 @@ fun BottomNavigationBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .glassSurface(shape = RoundedCornerShape(20.dp))
+            .height(60.dp)
+            .glassSurface()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -82,27 +82,27 @@ private fun BottomNavItemContent(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
         IconButton(
             onClick = onClick,
             modifier = if (isSelected) {
                 Modifier
-                    .size(48.dp)
-                    .glassSurfaceVariant(shape = RoundedCornerShape(12.dp))
+                    .size(40.dp)
+                    .glassSurfaceVariant(shape = RoundedCornerShape(10.dp))
             } else {
-                Modifier.size(48.dp)
+                Modifier.size(40.dp)
             }
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = if (isSelected) AccentBlue else TextTertiary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
         
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         
         Text(
             text = item.label,

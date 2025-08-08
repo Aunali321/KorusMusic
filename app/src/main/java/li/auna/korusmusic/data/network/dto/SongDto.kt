@@ -17,6 +17,7 @@ data class SongDto(
     @SerialName("file_modified") val fileModified: String,
     val bitrate: Int? = null,
     val format: String,
+    @SerialName("cover_path") val coverPath: String? = null,
     @SerialName("date_added") val dateAdded: String,
     val artist: ArtistDto? = null
 )

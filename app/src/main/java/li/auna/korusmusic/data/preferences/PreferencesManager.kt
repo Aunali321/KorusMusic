@@ -83,7 +83,7 @@ class PreferencesManager(
     }
 
     private fun getDefaultServerUrl(): String {
-        return ""
+        return "https://preview.frames.gallery"
     }
 
     private fun normalizeServerUrl(url: String): String {

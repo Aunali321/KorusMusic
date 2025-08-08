@@ -16,9 +16,10 @@ data class Album(
     val isLiked: Boolean = false
 ) {
     fun getCoverUrl(baseUrl: String): String? {
-        return if (coverPath != null) {
-            "${baseUrl}albums/$id/cover"
-        } else null
+        if (baseUrl.isBlank() || coverPath == null) return null
+        val normalizedBaseUrl = if (baseUrl.endsWith("/")) baseUrl.dropLast(1) else baseUrl
+        val normalizedPath = if (coverPath.startsWith("/")) coverPath else "/$coverPath"
+        return "$normalizedBaseUrl$normalizedPath"
     }
     
     fun getDurationFormatted(): String {

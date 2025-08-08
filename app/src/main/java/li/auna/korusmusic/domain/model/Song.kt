@@ -13,6 +13,7 @@ data class Song(
     val fileModified: String,
     val bitrate: Int? = null,
     val format: String,
+    val coverPath: String? = null,
     val dateAdded: String,
     val artist: Artist,
     val album: Album,
@@ -22,6 +23,18 @@ data class Song(
 ) {
     fun getStreamUrl(baseUrl: String): String {
         return "${baseUrl}api/songs/$id/stream"
+    }
+    
+    fun getCoverUrl(baseUrl: String): String? {
+        if (baseUrl.isBlank()) return null
+        val normalizedBaseUrl = if (baseUrl.endsWith("/")) baseUrl.dropLast(1) else baseUrl
+        return coverPath?.let { path ->
+            val normalizedPath = if (path.startsWith("/")) path else "/$path"
+            "$normalizedBaseUrl$normalizedPath"
+        } ?: album.coverPath?.let { path ->
+            val normalizedPath = if (path.startsWith("/")) path else "/$path"
+            "$normalizedBaseUrl$normalizedPath"
+        }
     }
     
     fun getDurationFormatted(): String {

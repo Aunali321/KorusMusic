@@ -60,13 +60,11 @@ private fun MiniPlayerContent(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(60.dp)
             .clickable { onExpand() }
-            .glassSurface(shape = RoundedCornerShape(16.dp)),
+            .glassSurface(),
         colors = glassCardColors(),
-        elevation = glassCardElevation(),
-        shape = RoundedCornerShape(16.dp)
+        elevation = glassCardElevation()
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
@@ -91,22 +89,31 @@ private fun MiniPlayerContent(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Album Art Placeholder
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = null,
-                        tint = TextTertiary,
-                        modifier = Modifier.size(24.dp)
+                // Album Art
+                playerState.currentSong?.let { song ->
+                    CoverArtImage(
+                        song = song,
+                        size = 40.dp,
+                        shape = RoundedCornerShape(8.dp)
                     )
+                } ?: run {
+                    // Fallback when no song is available
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = TextTertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -153,13 +160,13 @@ private fun MiniPlayerContent(
                     // Previous Button
                     IconButton(
                         onClick = onPrevious,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.SkipPrevious,
                             contentDescription = "Previous",
                             tint = TextSecondary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     
@@ -167,10 +174,10 @@ private fun MiniPlayerContent(
                     IconButton(
                         onClick = onPlayPause,
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(36.dp)
                             .background(
                                 AccentBlue.copy(alpha = 0.2f),
-                                RoundedCornerShape(12.dp)
+                                RoundedCornerShape(10.dp)
                             )
                     ) {
                         Icon(
@@ -181,20 +188,20 @@ private fun MiniPlayerContent(
                             },
                             contentDescription = if (playerState.isPlaying) "Pause" else "Play",
                             tint = AccentBlue,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     
                     // Next Button
                     IconButton(
                         onClick = onNext,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.SkipNext,
                             contentDescription = "Next",
                             tint = TextSecondary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

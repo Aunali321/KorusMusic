@@ -18,6 +18,7 @@ fun SongDto.toDomainModel(artist: Artist, album: Album): Song = Song(
     fileModified = fileModified,
     bitrate = bitrate,
     format = format,
+    coverPath = coverPath,
     dateAdded = dateAdded,
     artist = artist,
     album = album
@@ -93,6 +94,7 @@ fun SongDto.toEntity(): SongEntity = SongEntity(
     fileModified = fileModified,
     bitrate = bitrate,
     format = format,
+    coverPath = coverPath,
     dateAdded = dateAdded
 )
 
@@ -152,6 +154,7 @@ fun SongEntity.toDomainModel(artist: Artist, album: Album): Song = Song(
     fileModified = fileModified,
     bitrate = bitrate,
     format = format,
+    coverPath = coverPath,
     dateAdded = dateAdded,
     artist = artist,
     album = album,

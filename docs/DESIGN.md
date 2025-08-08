@@ -650,29 +650,6 @@ class LoginScreenTest {
 }
 ```
 
-## 11. Deployment
-
-### Build Configuration
-Build variants for `debug` and `release` define different base URLs and enable code shrinking for production builds.
-```gradle
-// build.gradle.kts (app)
-android {
-    buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-            buildConfigField("String", "BASE_URL", "\"https://dev.korus-server.com/api/\"")
-        }
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(...)
-            buildConfigField("String", "BASE_URL", "\"https://korus-server.com/api/\"")
-        }
-    }
-    // ... composeOptions, dependencies
-}
-```
-
 ### ProGuard Rules
 Rules are included to ensure that reflection-based libraries like Koin, Retrofit, and Room are not broken by code obfuscation.
 ```

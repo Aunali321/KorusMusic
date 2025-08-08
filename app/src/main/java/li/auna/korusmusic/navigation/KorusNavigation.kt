@@ -63,9 +63,9 @@ fun KorusNavigation(
     
     // Calculate bottom padding based on what's showing
     val bottomPadding = when {
-        showBottomNav && showMiniPlayer -> 160.dp // Both bottom nav (80dp) + mini player (80dp)
-        showBottomNav -> 80.dp // Just bottom nav
-        showMiniPlayer -> 80.dp // Just mini player  
+        showBottomNav && showMiniPlayer -> 120.dp // Both bottom nav (60dp) + mini player (60dp)
+        showBottomNav -> 60.dp // Just bottom nav
+        showMiniPlayer -> 60.dp // Just mini player  
         else -> 0.dp // Neither
     }
     
@@ -210,37 +210,38 @@ fun KorusNavigation(
         }
         }
         
-        // Mini Player (show above bottom nav when music is playing)
-        if (showMiniPlayer) {
-            MiniPlayer(
-                playerServiceConnection = playerServiceConnection,
-                onExpandToNowPlaying = {
-                    navController.navigate(KorusDestination.NowPlaying)
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = if (showBottomNav) 80.dp else 0.dp)
-            )
-        }
-        
-        // Bottom Navigation (only show on main screens)
-        if (showBottomNav) {
-            BottomNavigationBar(
-                currentDestination = currentDestination,
-                onNavigateToDestination = { destination ->
-                    navController.navigate(destination) {
-                        // Pop up to start destination to avoid building up a large stack
-                        popUpTo(KorusDestination.Home) {
-                            saveState = true
-                        }
-                        // Avoid multiple copies of the same destination when reselecting the same item
-                        launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
-                        restoreState = true
+        // Bottom UI Components - Stack them properly from bottom to top
+        Column(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            // Mini Player (above bottom nav)
+            if (showMiniPlayer) {
+                MiniPlayer(
+                    playerServiceConnection = playerServiceConnection,
+                    onExpandToNowPlaying = {
+                        navController.navigate(KorusDestination.NowPlaying)
                     }
-                },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+                )
+            }
+            
+            // Bottom Navigation (at the very bottom)
+            if (showBottomNav) {
+                BottomNavigationBar(
+                    currentDestination = currentDestination,
+                    onNavigateToDestination = { destination ->
+                        navController.navigate(destination) {
+                            // Pop up to start destination to avoid building up a large stack
+                            popUpTo(KorusDestination.Home) {
+                                saveState = true
+                            }
+                            // Avoid multiple copies of the same destination when reselecting the same item
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
+                        }
+                    }
+                )
+            }
         }
     }
 }

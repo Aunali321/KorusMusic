@@ -149,52 +149,6 @@ fun HomeScreen(
                         )
                     }
                 }
-
-                // Quick Actions
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onNavigateToLibrary,
-                        colors = glassCardColors(),
-                        elevation = glassCardElevation(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LibraryMusic,
-                                contentDescription = null,
-                                tint = AccentBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = "Your Library",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary
-                                )
-                                Text(
-                                    text = "Browse your music collection",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = TextTertiary
-                            )
-                        }
-                    }
-                }
             }
         }
 

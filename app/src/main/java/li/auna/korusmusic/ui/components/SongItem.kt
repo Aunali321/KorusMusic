@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,20 +35,12 @@ fun SongItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Album art placeholder
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = TextTertiary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            // Album art
+            CoverArtImage(
+                song = song,
+                size = 48.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
             
             Spacer(modifier = Modifier.width(16.dp))
             

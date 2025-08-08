@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import li.auna.korusmusic.ui.components.SongItem
+import li.auna.korusmusic.ui.components.AlbumCoverImage
 import li.auna.korusmusic.player.PlayerServiceConnection
 import li.auna.korusmusic.ui.theme.*
 
@@ -383,19 +384,11 @@ private fun AlbumItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Album,
-                    contentDescription = null,
-                    tint = TextTertiary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            AlbumCoverImage(
+                album = album,
+                size = 48.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
             
             Spacer(modifier = Modifier.width(16.dp))
             

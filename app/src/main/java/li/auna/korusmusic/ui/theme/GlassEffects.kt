@@ -22,6 +22,12 @@ fun glassCardColors() = CardDefaults.cardColors(
 )
 
 @Composable
+fun dynamicGlassCardColors(colorScheme: DynamicColorScheme) = CardDefaults.cardColors(
+    containerColor = colorScheme.surfaceColor,
+    contentColor = colorScheme.onSurfaceColor
+)
+
+@Composable
 fun glassCardElevation(): CardElevation = CardDefaults.cardElevation(
     defaultElevation = 0.dp,
     pressedElevation = 2.dp,
@@ -41,6 +47,19 @@ fun Modifier.glassSurface(
         shape = shape
     )
 
+fun Modifier.dynamicGlassSurface(
+    colorScheme: DynamicColorScheme,
+    shape: Shape = RoundedCornerShape(12.dp),
+    borderWidth: Dp = 1.dp
+): Modifier = this
+    .clip(shape)
+    .background(colorScheme.surfaceColor)
+    .border(
+        width = borderWidth,
+        color = colorScheme.outlineColor,
+        shape = shape
+    )
+
 fun Modifier.glassSurfaceVariant(
     shape: Shape = RoundedCornerShape(8.dp),
     borderWidth: Dp = 1.dp
@@ -50,6 +69,19 @@ fun Modifier.glassSurfaceVariant(
     .border(
         width = borderWidth,
         color = GlassBorderLight,
+        shape = shape
+    )
+
+fun Modifier.dynamicGlassSurfaceVariant(
+    colorScheme: DynamicColorScheme,
+    shape: Shape = RoundedCornerShape(8.dp),
+    borderWidth: Dp = 1.dp
+): Modifier = this
+    .clip(shape)
+    .background(colorScheme.surfaceVariantColor)
+    .border(
+        width = borderWidth,
+        color = colorScheme.outlineVariantColor,
         shape = shape
     )
 
@@ -73,6 +105,19 @@ fun Modifier.subtleGradientOverlay(): Modifier = this
             colors = listOf(
                 Color.Transparent,
                 Zinc950.copy(alpha = 0.8f)
+            )
+        )
+    )
+
+fun Modifier.dynamicBackground(colorScheme: DynamicColorScheme): Modifier = this
+    .background(colorScheme.backgroundColor)
+
+fun Modifier.dynamicGradientOverlay(colorScheme: DynamicColorScheme): Modifier = this
+    .background(
+        brush = Brush.verticalGradient(
+            colors = listOf(
+                Color.Transparent,
+                colorScheme.backgroundColor.copy(alpha = 0.8f)
             )
         )
     )

@@ -40,6 +40,7 @@ data class SongEntity(
     @ColumnInfo(name = "file_modified") val fileModified: String,
     val bitrate: Int? = null,
     val format: String,
+    @ColumnInfo(name = "cover_path") val coverPath: String? = null,
     @ColumnInfo(name = "date_added") val dateAdded: String,
     @ColumnInfo(name = "is_liked") val isLiked: Boolean = false,
     @ColumnInfo(name = "play_count") val playCount: Int = 0,
