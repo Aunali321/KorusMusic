@@ -1,19 +1,26 @@
 package li.auna.korusmusic.ui.screens.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import li.auna.korusmusic.ui.components.SongItem
 import li.auna.korusmusic.player.PlayerServiceConnection
+import li.auna.korusmusic.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,32 +38,74 @@ fun LibraryScreen(
     val tabs = listOf("Songs", "Albums", "Artists", "Playlists")
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Zinc950)
     ) {
         TopAppBar(
             title = {
                 Text(
                     text = "Your Library",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.headlineSmall
                 )
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        tint = TextSecondary
                     )
                 }
-            }
+            },
+            modifier = Modifier.glassTopAppBar(),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = GlassSurface,
+                titleContentColor = TextPrimary
+            )
         )
 
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title) }
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .glassSurface(shape = RoundedCornerShape(16.dp))
+        ) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                contentColor = TextPrimary,
+                indicator = { tabPositions ->
+                    if (tabPositions.isNotEmpty() && selectedTab < tabPositions.size) {
+                        Box(
+                            modifier = Modifier
+                                .tabIndicatorOffset(tabPositions[selectedTab])
+                                .height(3.dp)
+                                .background(
+                                    AccentBlue,
+                                    RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)
+                                )
+                        )
+                    }
+                },
+                divider = {}
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        selectedContentColor = AccentBlue,
+                        unselectedContentColor = TextTertiary,
+                        text = {
+                            Text(
+                                title,
+                                fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium
+                            )
+                        }
+                    )
+                }
             }
         }
 
@@ -110,7 +159,9 @@ private fun SongsTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = AccentBlue
+                )
             }
         }
         error != null -> {
@@ -149,7 +200,9 @@ private fun AlbumsTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = AccentBlue
+                )
             }
         }
         error != null -> {
@@ -188,7 +241,9 @@ private fun ArtistsTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = AccentBlue
+                )
             }
         }
         error != null -> {
@@ -227,7 +282,9 @@ private fun PlaylistsTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = AccentBlue
+                )
             }
         }
         error != null -> {
@@ -267,19 +324,26 @@ private fun ErrorContent(
         Text(
             text = "Error loading library",
             style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.error
+            color = AccentRed,
+            fontWeight = FontWeight.Bold
         )
         Text(
             text = error,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp)
         )
         Button(
             onClick = onRetry,
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .glassSurface(shape = RoundedCornerShape(8.dp)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AccentBlue,
+                contentColor = TextPrimary
+            )
         ) {
-            Text("Retry")
+            Text("Retry", fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -293,7 +357,8 @@ private fun EmptyContent(message: String) {
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = TextSecondary,
+            fontWeight = FontWeight.Medium
         )
     }
 }
@@ -305,15 +370,62 @@ private fun AlbumItem(
     album: li.auna.korusmusic.domain.model.Album,
     onClick: () -> Unit
 ) {
-    Card(onClick = onClick) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Card(
+        onClick = onClick,
+        colors = glassCardColors(),
+        elevation = glassCardElevation(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = album.name, fontWeight = FontWeight.Medium)
-            Text(
-                text = album.artist?.name ?: "Unknown Artist",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Album,
+                    contentDescription = null,
+                    tint = TextTertiary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = album.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = album.artist?.name ?: "Unknown Artist",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (album.year != null) {
+                    Text(
+                        text = album.year.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -324,15 +436,54 @@ private fun ArtistItem(
     artist: li.auna.korusmusic.domain.model.Artist,
     onClick: () -> Unit
 ) {
-    Card(onClick = onClick) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Card(
+        onClick = onClick,
+        colors = glassCardColors(),
+        elevation = glassCardElevation(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = artist.name, fontWeight = FontWeight.Medium)
-            Text(
-                text = "${artist.albumCount} albums",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .glassSurfaceVariant(shape = RoundedCornerShape(24.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = TextTertiary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = artist.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${artist.albumCount} albums • ${artist.songCount} songs",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -343,15 +494,62 @@ private fun PlaylistItem(
     playlist: li.auna.korusmusic.domain.model.Playlist,
     onClick: () -> Unit
 ) {
-    Card(onClick = onClick) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Card(
+        onClick = onClick,
+        colors = glassCardColors(),
+        elevation = glassCardElevation(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = playlist.name, fontWeight = FontWeight.Medium)
-            Text(
-                text = "${playlist.songCount} songs",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .glassSurfaceVariant(shape = RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlaylistPlay,
+                    contentDescription = null,
+                    tint = TextTertiary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = playlist.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${playlist.songCount} songs",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                if (playlist.description?.isNotEmpty() == true) {
+                    Text(
+                        text = playlist.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(top = 4.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

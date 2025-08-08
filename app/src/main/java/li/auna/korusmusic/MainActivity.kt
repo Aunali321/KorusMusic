@@ -55,7 +55,8 @@ class MainActivity : ComponentActivity() {
                     
                     KorusNavigation(
                         navController = navController,
-                        tokenManager = tokenManager
+                        tokenManager = tokenManager,
+                        playerServiceConnection = playerServiceConnection
                     )
                 }
             }
