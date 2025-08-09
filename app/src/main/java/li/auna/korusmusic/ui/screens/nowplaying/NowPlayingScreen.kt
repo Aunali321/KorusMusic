@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.foundation.layout.statusBarsPadding
 import li.auna.korusmusic.player.PlayerServiceConnection
 import li.auna.korusmusic.player.RepeatMode
 import li.auna.korusmusic.ui.components.CoverArtImage
@@ -61,7 +62,7 @@ fun NowPlayingScreen(
         )
 
         // Bottom sheet state - Start fully collapsed (peek only)
-        val bottomSheetPeekHeight = 88.dp
+        val bottomSheetPeekHeight = 56.dp
         var bottomSheetTargetOffset by remember {
             mutableFloatStateOf(1f) // 0.0 = expanded, 1.0 = collapsed
         }
@@ -161,6 +162,7 @@ private fun MainContent(
 ) {
     Column(
         modifier = modifier
+            .statusBarsPadding()
             .padding(horizontal = 16.dp)
             .padding(bottom = 16.dp + bottomPeekPadding * 0.25f),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -184,7 +186,7 @@ private fun MainContent(
 
             Text(
                 text = "Now Playing",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.onSurfaceColor
             )
@@ -199,44 +201,42 @@ private fun MainContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // Album Art - Smaller so everything fits on one screen
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .heightIn(max = 240.dp)
-                .dynamicGlassSurface(
-                    colorScheme = colorScheme,
-                    shape = RoundedCornerShape(24.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            playerState.currentSong?.let { song ->
-                CoverArtImage(
-                    song = song,
-                    size = 200.dp,
-                    shape = RoundedCornerShape(24.dp),
-                    onBitmapLoaded = onCoverArtLoaded
-                )
-            } ?: run {
+        // Album Art - Larger and fills more space
+        playerState.currentSong?.let { song ->
+            CoverArtImage(
+                song = song,
+                size = 280.dp,
+                shape = RoundedCornerShape(20.dp),
+                onBitmapLoaded = onCoverArtLoaded
+            )
+        } ?: run {
+            Box(
+                modifier = Modifier
+                    .size(280.dp)
+                    .background(
+                        colorScheme.surfaceVariantColor,
+                        RoundedCornerShape(20.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier.size(140.dp),
                     tint = colorScheme.onSurfaceVariantColor
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // Song Info
         playerState.currentSong?.let { song ->
             Text(
                 text = song.title,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -246,26 +246,22 @@ private fun MainContent(
 
             Text(
                 text = song.artist.name,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = colorScheme.onSurfaceVariantColor,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // Progress Bar
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .dynamicGlassSurface(
-                    colorScheme = colorScheme,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
             LinearProgressIndicator(
                 progress = if (playerState.duration > 0) {
@@ -297,17 +293,11 @@ private fun MainContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Control Buttons
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .dynamicGlassSurface(
-                    colorScheme = colorScheme,
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -316,7 +306,7 @@ private fun MainContent(
                 onClick = {
                     playerServiceConnection.setShuffleMode(!playerState.shuffleMode)
                 },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(56.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
@@ -326,24 +316,19 @@ private fun MainContent(
                     } else {
                         colorScheme.onSurfaceVariantColor
                     },
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             // Previous
             IconButton(
                 onClick = { playerServiceConnection.seekToPrevious() },
-                modifier = Modifier
-                    .size(52.dp)
-                    .dynamicGlassSurfaceVariant(
-                        colorScheme = colorScheme,
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                modifier = Modifier.size(64.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.SkipPrevious,
                     contentDescription = "Previous",
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = colorScheme.onSurfaceColor
                 )
             }
@@ -351,14 +336,10 @@ private fun MainContent(
             // Play/Pause - Main Control
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(80.dp)
                     .background(
-                        colorScheme.primaryColor.copy(alpha = 0.2f),
-                        RoundedCornerShape(20.dp)
-                    )
-                    .dynamicGlassSurface(
-                        colorScheme = colorScheme,
-                        shape = RoundedCornerShape(20.dp)
+                        colorScheme.primaryColor.copy(alpha = 0.15f),
+                        RoundedCornerShape(40.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -373,7 +354,7 @@ private fun MainContent(
                             Icons.Default.PlayArrow
                         },
                         contentDescription = if (playerState.isPlaying) "Pause" else "Play",
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                         tint = colorScheme.primaryColor
                     )
                 }
@@ -382,17 +363,12 @@ private fun MainContent(
             // Next
             IconButton(
                 onClick = { playerServiceConnection.seekToNext() },
-                modifier = Modifier
-                    .size(52.dp)
-                    .dynamicGlassSurfaceVariant(
-                        colorScheme = colorScheme,
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                modifier = Modifier.size(64.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.SkipNext,
                     contentDescription = "Next",
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = colorScheme.onSurfaceColor
                 )
             }
@@ -407,7 +383,7 @@ private fun MainContent(
                     }
                     playerServiceConnection.setRepeatMode(nextMode)
                 },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(56.dp)
             ) {
                 Icon(
                     imageVector = when (playerState.repeatMode) {
@@ -420,7 +396,7 @@ private fun MainContent(
                     } else {
                         colorScheme.onSurfaceVariantColor
                     },
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -460,9 +436,9 @@ private fun DraggableBottomSheet(
                 .height(maxHeight)
                 .offset { IntOffset(0, topYPx.roundToInt()) }
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .dynamicGlassSurface(
-                    colorScheme = colorScheme,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                .background(
+                    colorScheme.bottomSheetColor,
+                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
                 .pointerInput(collapsedTopPx, expandedTopPx) {
                     var startDragOffset = 0f
@@ -546,7 +522,7 @@ private fun DraggableBottomSheet(
                     ) {
                         Text(
                             "UP NEXT",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
                         )
                     }
@@ -560,7 +536,7 @@ private fun DraggableBottomSheet(
                     ) {
                         Text(
                             "LYRICS",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
                         )
                     }

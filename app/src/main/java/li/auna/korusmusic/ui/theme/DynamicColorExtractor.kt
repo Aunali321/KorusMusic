@@ -20,6 +20,7 @@ data class DynamicColorScheme(
     val backgroundColor: Color = Zinc950,
     val surfaceColor: Color = GlassSurface,
     val surfaceVariantColor: Color = GlassSurfaceVariant,
+    val bottomSheetColor: Color = Zinc900,
     val onSurfaceColor: Color = TextPrimary,
     val onSurfaceVariantColor: Color = TextSecondary,
     val outlineColor: Color = GlassBorder,
@@ -57,50 +58,31 @@ object DynamicColorExtractor {
     private fun generateColorScheme(dominantColor: Color): DynamicColorScheme {
         val dominantHsl = dominantColor.toHsl()
         
-        // Create a darker, more saturated background
+        // Create a rich, saturated background based on cover
         val backgroundColor = Color.hsl(
             hue = dominantHsl.hue,
-            saturation = minOf(dominantHsl.saturation * 0.6f, 0.4f),
-            lightness = 0.05f,
+            saturation = minOf(dominantHsl.saturation * 1.2f, 0.85f),
+            lightness = 0.12f,
             alpha = 1f
         )
         
-        // Create glass surface colors with the dominant hue
-        val surfaceColor = Color.hsl(
-            hue = dominantHsl.hue,
-            saturation = minOf(dominantHsl.saturation * 0.3f, 0.2f),
-            lightness = 0.1f,
-            alpha = 0.15f
-        )
+        // Use neutral glass surface colors (no extracted color influence)
+        val surfaceColor = GlassSurface
+        val surfaceVariantColor = GlassSurfaceVariant
         
-        val surfaceVariantColor = Color.hsl(
-            hue = dominantHsl.hue,
-            saturation = minOf(dominantHsl.saturation * 0.2f, 0.15f),
-            lightness = 0.08f,
-            alpha = 0.1f
-        )
+        // Use static accent color (no extracted color influence)
+        val primaryColor = AccentBlue
         
-        // Create accent color (more vibrant version of dominant)
-        val primaryColor = Color.hsl(
+        // Use neutral outline colors (no extracted color influence)
+        val outlineColor = GlassBorder
+        val outlineVariantColor = GlassBorderLight
+        
+        // Create bottom sheet as darker version of background color
+        val bottomSheetColor = Color.hsl(
             hue = dominantHsl.hue,
-            saturation = minOf(dominantHsl.saturation * 1.2f, 1f),
-            lightness = maxOf(dominantHsl.lightness, 0.6f),
+            saturation = minOf(dominantHsl.saturation * 1.2f, 0.85f), // Same saturation as background
+            lightness = 0.08f, // Darker than background (0.12f) but not black
             alpha = 1f
-        )
-        
-        // Create outline colors
-        val outlineColor = Color.hsl(
-            hue = dominantHsl.hue,
-            saturation = dominantHsl.saturation * 0.3f,
-            lightness = 0.2f,
-            alpha = 0.3f
-        )
-        
-        val outlineVariantColor = Color.hsl(
-            hue = dominantHsl.hue,
-            saturation = dominantHsl.saturation * 0.2f,
-            lightness = 0.15f,
-            alpha = 0.2f
         )
         
         return DynamicColorScheme(
@@ -108,6 +90,7 @@ object DynamicColorExtractor {
             backgroundColor = backgroundColor,
             surfaceColor = surfaceColor,
             surfaceVariantColor = surfaceVariantColor,
+            bottomSheetColor = bottomSheetColor,
             onSurfaceColor = TextPrimary,
             onSurfaceVariantColor = TextSecondary,
             outlineColor = outlineColor,
