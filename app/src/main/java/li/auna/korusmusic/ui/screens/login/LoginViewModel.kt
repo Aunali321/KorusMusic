@@ -32,6 +32,10 @@ class LoginViewModel(
             
             try {
                 val user = authRepository.login(username, password)
+                
+                // Wait a bit to ensure tokens are saved to DataStore
+                kotlinx.coroutines.delay(100)
+                
                 _loginState.value = _loginState.value.copy(
                     isLoading = false,
                     isSuccess = true,
@@ -82,6 +86,10 @@ class LoginViewModel(
             
             try {
                 val user = authRepository.login(username, password)
+                
+                // Wait a bit to ensure tokens are saved to DataStore
+                kotlinx.coroutines.delay(100)
+                
                 _loginState.value = _loginState.value.copy(
                     isLoading = false,
                     isSuccess = true,

@@ -37,17 +37,26 @@ val playerModule = module {
     // Data source factory with caching
     single<DataSource.Factory> {
         val tokenManager = get<TokenManager>()
-        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("KorusMusic/1.0")
-            .setConnectTimeoutMs(30000)
-            .setReadTimeoutMs(30000)
-            .setDefaultRequestProperties(mapOf(
-                "Authorization" to "Bearer ${kotlinx.coroutines.runBlocking { tokenManager.getAccessToken() }}"
-            ))
+        
+        // Custom data source that gets fresh auth header for each request
+        val authenticatedDataSourceFactory = DataSource.Factory {
+            val token = kotlinx.coroutines.runBlocking { tokenManager.getAccessToken() }
+            val httpDataSource = DefaultHttpDataSource.Factory()
+                .setUserAgent("KorusMusic/1.0")
+                .setConnectTimeoutMs(30000)
+                .setReadTimeoutMs(30000)
+                .createDataSource()
+            
+            if (token != null) {
+                httpDataSource.setRequestProperty("Authorization", "Bearer $token")
+            }
+            
+            httpDataSource
+        }
         
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(get())
-            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setUpstreamDataSourceFactory(authenticatedDataSourceFactory)
             .setCacheWriteDataSinkFactory(null) // Cache on read
         
         DefaultDataSource.Factory(androidContext(), cacheDataSourceFactory)

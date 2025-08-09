@@ -164,6 +164,15 @@ Implementation progress for the Korus Android music streaming client based on th
 - **Solution**: Added MODIFY_AUDIO_SETTINGS permission and auto-play in setQueue()
 - **Impact**: Songs now play automatically when tapped with proper audio output
 
+### 401 Authentication Crash Issues (2025-08-10)
+- **Root Cause**: App crashes when 401 errors occur due to blocking `runBlocking` operations and missing logout flow
+- **Solution**: 
+  - Enhanced `TokenAuthenticator` with proper exception handling and mutex synchronization
+  - Added logout event system in `TokenManager` using `SharedFlow`
+  - Implemented automatic navigation to login screen in `MainActivity`
+  - Fixed media player authentication by using fresh tokens for each streaming request
+- **Impact**: 401 errors no longer crash the app, users get gracefully redirected to login, streaming works immediately after login
+
 ## Technical Debt & TODOs
 - [x] ~~Complete remaining repository implementations (Album, Artist, Playlist)~~ ✅ COMPLETED
 - [x] ~~Complete all ViewModel implementations~~ ✅ COMPLETED

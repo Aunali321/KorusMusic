@@ -19,9 +19,12 @@ The app follows Clean Architecture with MVVM pattern:
 
 ### 2. Authentication Flow
 - JWT tokens stored in DataStore (encrypted preferences)
-- **AuthInterceptor** automatically adds Bearer token to requests
-- **TokenAuthenticator** handles 401 responses with automatic token refresh
-- Login/logout managed through AuthRepository
+- **AuthInterceptor** automatically adds Bearer token to requests with crash-safe exception handling
+- **TokenAuthenticator** handles 401 responses with proper mutex synchronization to prevent race conditions
+- **TokenManager** emits logout events via `SharedFlow` for automatic UI navigation
+- **MainActivity** listens to logout events and navigates to login screen automatically
+- Media player uses authenticated data sources for streaming requests
+- Login/logout managed through AuthRepository with token refresh capability
 
 ### 3. Database Schema (Room)
 Core entities with proper relationships:

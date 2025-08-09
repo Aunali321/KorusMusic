@@ -46,6 +46,18 @@ class MainActivity : ComponentActivity() {
                         playerServiceConnection.connect()
                     }
                     
+                    // Handle automatic logout when tokens are cleared (only when authenticated)
+                    LaunchedEffect(hasTokens) {
+                        if (hasTokens != null) {
+                            tokenManager.logoutEvents.collect {
+                                // Navigate to login screen when tokens are cleared
+                                navController.navigate(li.auna.korusmusic.navigation.KorusDestination.Login) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Trigger initial data sync when user has valid tokens
                     LaunchedEffect(hasTokens) {
                         if (hasTokens != null) {
