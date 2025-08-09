@@ -35,16 +35,21 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import li.auna.korusmusic.player.PlayerServiceConnection
 import li.auna.korusmusic.player.RepeatMode
 import li.auna.korusmusic.ui.components.CoverArtImage
+import li.auna.korusmusic.ui.components.LyricsDisplay
 import li.auna.korusmusic.ui.theme.*
+import org.koin.androidx.compose.getViewModel
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingScreen(
     onNavigateBack: () -> Unit,
-    playerServiceConnection: PlayerServiceConnection = org.koin.androidx.compose.get()
+    playerServiceConnection: PlayerServiceConnection = org.koin.androidx.compose.get(),
+    viewModel: NowPlayingViewModel = getViewModel()
 ) {
     val playerManager by playerServiceConnection.playerManager.collectAsState()
+    val lyricsState by viewModel.lyricsState.collectAsState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
 
     playerManager?.let { manager ->
         val playerState by manager.playerState.collectAsState()
@@ -94,6 +99,11 @@ fun NowPlayingScreen(
             DraggableBottomSheet(
                 playerState = playerState,
                 colorScheme = dynamicColorScheme,
+                lyrics = lyricsState,
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = { language ->
+                    viewModel.setSelectedLanguage(language)
+                },
                 offset = bottomSheetOffset,
                 onOffsetChange = { bottomSheetTargetOffset = it },
                 onDragStateChange = { isDragging = it },
@@ -407,6 +417,9 @@ private fun MainContent(
 private fun DraggableBottomSheet(
     playerState: li.auna.korusmusic.player.PlayerState,
     colorScheme: DynamicColorScheme,
+    lyrics: List<li.auna.korusmusic.domain.model.Lyrics>,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
     offset: Float,
     onOffsetChange: (Float) -> Unit,
     onDragStateChange: (Boolean) -> Unit,
@@ -553,7 +566,13 @@ private fun DraggableBottomSheet(
             ) {
                 when (selectedTab) {
                     0 -> QueueContent(playerState, colorScheme)
-                    1 -> LyricsContent(colorScheme)
+                    1 -> LyricsContent(
+                        lyrics = lyrics,
+                        currentPositionMs = playerState.currentPosition,
+                        colorScheme = colorScheme,
+                        selectedLanguage = selectedLanguage,
+                        onLanguageSelected = onLanguageSelected
+                    )
                 }
                 // Top gradient scrim to hide first item under the peek
                 Box(
@@ -626,36 +645,20 @@ private fun QueueContent(
 
 @Composable
 private fun LyricsContent(
-    colorScheme: DynamicColorScheme
+    lyrics: List<li.auna.korusmusic.domain.model.Lyrics>,
+    currentPositionMs: Long,
+    colorScheme: DynamicColorScheme,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lyrics,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = colorScheme.onSurfaceVariantColor
-        )
-        Text(
-            text = "Lyrics not available",
-            style = MaterialTheme.typography.titleMedium,
-            color = colorScheme.onSurfaceColor,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 16.dp)
-        )
-        Text(
-            text = "Lyrics will appear here when available",
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurfaceVariantColor,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
+    LyricsDisplay(
+        lyrics = lyrics,
+        currentPositionMs = currentPositionMs,
+        colorScheme = colorScheme,
+        preferredLanguage = selectedLanguage,
+        onLanguageSelected = onLanguageSelected,
+        modifier = Modifier.fillMaxSize()
+    )
 }
 
 @Composable

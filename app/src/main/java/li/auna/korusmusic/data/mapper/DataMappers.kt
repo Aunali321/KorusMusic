@@ -252,3 +252,52 @@ fun PlaylistSongDto.toEntity(playlistId: Long): PlaylistSongEntity = PlaylistSon
     position = position
 )
 
+// Lyrics mappers
+fun LyricsDto.toDomainModel(): Lyrics = Lyrics(
+    id = id,
+    songId = songId,
+    content = content,
+    type = when (type) {
+        "synced" -> LyricsType.SYNCED
+        "unsynced" -> LyricsType.UNSYNCED
+        else -> LyricsType.UNSYNCED
+    },
+    source = when (source) {
+        "embedded" -> LyricsSource.EMBEDDED
+        "external_lrc" -> LyricsSource.EXTERNAL_LRC
+        "external_txt" -> LyricsSource.EXTERNAL_TXT
+        else -> LyricsSource.EXTERNAL_TXT
+    },
+    language = language,
+    createdAt = createdAt
+)
+
+fun LyricsDto.toEntity(): LyricsEntity = LyricsEntity(
+    id = id,
+    songId = songId,
+    content = content,
+    type = type,
+    source = source,
+    language = language,
+    createdAt = createdAt
+)
+
+fun LyricsEntity.toDomainModel(): Lyrics = Lyrics(
+    id = id,
+    songId = songId,
+    content = content,
+    type = when (type) {
+        "synced" -> LyricsType.SYNCED
+        "unsynced" -> LyricsType.UNSYNCED
+        else -> LyricsType.UNSYNCED
+    },
+    source = when (source) {
+        "embedded" -> LyricsSource.EMBEDDED
+        "external_lrc" -> LyricsSource.EXTERNAL_LRC
+        "external_txt" -> LyricsSource.EXTERNAL_TXT
+        else -> LyricsSource.EXTERNAL_TXT
+    },
+    language = language,
+    createdAt = createdAt
+)
+

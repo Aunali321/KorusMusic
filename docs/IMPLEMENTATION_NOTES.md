@@ -30,6 +30,7 @@ Core entities with proper relationships:
 - **ArtistEntity** (independent)
 - **PlaylistEntity** with **PlaylistSongEntity** junction table
 - **PlayHistoryEntity** for user statistics
+- **LyricsEntity** (FK to Song) - Multi-language synchronized/unsynchronized lyrics
 
 ### 4. Player Architecture
 - **MusicService**: Foreground service hosting ExoPlayer
@@ -133,6 +134,7 @@ Login → Home → Library/Search/NowPlaying/Settings
 - ✅ Audio playback with all codec support
 - ✅ Complete UI navigation and user flows
 - ✅ Cover art display system with Coil image loading
+- ✅ **Comprehensive lyrics system with multi-language synchronized/unsynchronized support**
 
 ## Remaining Implementations (Lower Priority)
 

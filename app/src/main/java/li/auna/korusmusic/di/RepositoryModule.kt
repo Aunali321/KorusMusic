@@ -4,11 +4,13 @@ import org.koin.dsl.module
 import li.auna.korusmusic.data.repository.AlbumRepositoryImpl
 import li.auna.korusmusic.data.repository.ArtistRepositoryImpl
 import li.auna.korusmusic.data.repository.AuthRepositoryImpl
+import li.auna.korusmusic.data.repository.LyricsRepositoryImpl
 import li.auna.korusmusic.data.repository.PlaylistRepositoryImpl
 import li.auna.korusmusic.data.repository.SongRepositoryImpl
 import li.auna.korusmusic.domain.repository.AlbumRepository
 import li.auna.korusmusic.domain.repository.ArtistRepository
 import li.auna.korusmusic.domain.repository.AuthRepository
+import li.auna.korusmusic.domain.repository.LyricsRepository
 import li.auna.korusmusic.domain.repository.PlaylistRepository
 import li.auna.korusmusic.domain.repository.SongRepository
 
@@ -32,5 +34,9 @@ val repositoryModule = module {
     
     single<PlaylistRepository> { 
         PlaylistRepositoryImpl(get(), get(), get()) 
+    }
+    
+    single<LyricsRepository> { 
+        LyricsRepositoryImpl(get(), get(), get()) 
     }
 }

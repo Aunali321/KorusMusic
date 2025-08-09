@@ -19,5 +19,6 @@ data class SongDto(
     val format: String,
     @SerialName("cover_path") val coverPath: String? = null,
     @SerialName("date_added") val dateAdded: String,
-    val artist: ArtistDto? = null
+    val artist: ArtistDto? = null,
+    val lyrics: List<LyricsDto> = emptyList()
 )

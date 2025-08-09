@@ -131,7 +131,7 @@ graph TD
 | **Home** | HomeSections (RecentlyAdded, RecentlyPlayed, etc.) | HomeViewModel |
 | **Library** | TabRow (Songs, Albums, Artists, Playlists) | LibraryViewModel |
 | **Search** | SearchBar, SearchResults | SearchViewModel |
-| **Now Playing** | PlayerControls, Queue, Lyrics | PlayerViewModel (interacts with PlayerManager) |
+| **Now Playing** | PlayerControls, Queue, **Interactive Lyrics Display** | NowPlayingViewModel (with LyricsRepository) |
 | **Playlist Details** | SongList, ReorderableList | PlaylistViewModel |
 | **Settings** | PreferenceScreen, AccountSettings | SettingsViewModel |
 
@@ -183,12 +183,13 @@ interface KorusApiService {
 ```kotlin
 // Database.kt
 @Database(
-    entities = [ SongEntity::class, AlbumEntity::class, /* ...other entities */ ],
-    version = 1
+    entities = [ SongEntity::class, AlbumEntity::class, LyricsEntity::class, /* ...other entities */ ],
+    version = 2
 )
 @TypeConverters(Converters::class)
 abstract class KorusDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
+    abstract fun lyricsDao(): LyricsDao
     // ... other DAOs
 }
 
@@ -509,6 +510,7 @@ val networkModule = module {
 // RepositoryModule.kt
 val repositoryModule = module {
     single<SongRepository> { SongRepositoryImpl(get(), get(), Dispatchers.IO) }
+    single<LyricsRepository> { LyricsRepositoryImpl(get(), get(), Dispatchers.IO) }
     // ... other repositories
 }
 
@@ -522,7 +524,7 @@ val playerModule = module {
 // ViewModelModule.kt
 val viewModelModule = module {
     viewModel { HomeViewModel(get()) }
-    viewModel { PlayerViewModel(get()) } // Injects PlayerManager
+    viewModel { NowPlayingViewModel(get(), get(), get()) } // PlayerManager, SongRepository, LyricsRepository
     // ... other ViewModels
 }
 
@@ -530,7 +532,145 @@ val viewModelModule = module {
 val appModules = listOf(networkModule, databaseModule, repositoryModule, playerModule, cacheModule, viewModelModule, ...)
 ```
 
-## 8. Key Features Implementation Snippets
+## 8. Lyrics System Implementation
+
+### Multi-Source Lyrics Integration
+The app supports comprehensive lyrics functionality with seamless integration to the Korus server's lyrics API. Lyrics are automatically synchronized from multiple sources and displayed with real-time synchronization during playback.
+
+#### Key Features
+- **Multi-language support** with ISO 639-2 language codes (English, Arabic, Urdu, Hindi, Spanish, French, German, Japanese, Korean, Chinese, Portuguese, Italian, Russian)
+- **Synchronized lyrics** with karaoke-style highlighting and auto-scroll
+- **Unsynchronized lyrics** with static text display
+- **Language selection** dropdown for songs with multiple language variants
+- **Real-time position sync** with player progress
+- **Automatic fallback** to available lyrics when preferred language is unavailable
+
+#### Data Layer
+```kotlin
+// LyricsEntity.kt - Room database entity
+@Entity(
+    tableName = "lyrics",
+    foreignKeys = [ForeignKey(entity = SongEntity::class, ...)],
+    indices = [Index(value = ["song_id", "language", "type"], unique = true)]
+)
+data class LyricsEntity(
+    @PrimaryKey val id: Long,
+    @ColumnInfo(name = "song_id") val songId: Long,
+    val content: String,
+    val type: String, // "synced" or "unsynced"
+    val source: String, // "embedded", "external_lrc", or "external_txt"
+    val language: String, // ISO 639-2 language code
+    @ColumnInfo(name = "created_at") val createdAt: String
+)
+
+// Domain Model
+data class Lyrics(
+    val id: Long,
+    val songId: Long,
+    val content: String,
+    val type: LyricsType, // SYNCED or UNSYNCED
+    val source: LyricsSource, // EMBEDDED, EXTERNAL_LRC, EXTERNAL_TXT
+    val language: String,
+    val createdAt: String
+)
+
+// Synchronized lyrics data structure
+@Serializable
+data class SynchronizedLyricsData(
+    val metadata: LyricsMetadata,
+    val lines: List<LyricsLine>
+)
+
+@Serializable
+data class LyricsLine(
+    val time: Long, // Timestamp in milliseconds
+    val timeStr: String, // Original timestamp string [mm:ss.xx]
+    val text: String
+)
+```
+
+#### Repository Layer
+```kotlin
+interface LyricsRepository {
+    fun getLyricsBySongId(songId: Long): Flow<List<Lyrics>>
+    suspend fun getSyncedLyricsBySongId(songId: Long): Lyrics?
+    suspend fun getAvailableLanguagesBySongId(songId: Long): List<String>
+    suspend fun syncLyricsForSong(songId: Long)
+}
+
+class LyricsRepositoryImpl(
+    private val apiServiceProvider: KorusApiServiceProvider,
+    private val database: KorusDatabase,
+    private val ioDispatcher: CoroutineDispatcher
+) : LyricsRepository {
+    // Auto-sync lyrics when songs are fetched from API
+    // Store lyrics with foreign key relationship to songs
+    // Provide reactive Flow for UI updates
+}
+```
+
+#### UI Components
+```kotlin
+@Composable
+fun LyricsDisplay(
+    lyrics: List<Lyrics>,
+    currentPositionMs: Long,
+    colorScheme: DynamicColorScheme,
+    preferredLanguage: String = "eng",
+    onLanguageSelected: (String) -> Unit = {}
+) {
+    // Handles both synchronized and unsynchronized lyrics
+    // Automatic language selection with preference support  
+    // Real-time highlighting for synchronized lyrics
+    // Smooth auto-scroll following song progress
+    // Language selector dropdown for multi-language songs
+}
+
+@Composable
+private fun SynchronizedLyricsDisplay(
+    lyrics: Lyrics,
+    currentPositionMs: Long,
+    colorScheme: DynamicColorScheme
+) {
+    // Karaoke-style line highlighting
+    // Auto-scroll with smooth animations
+    // Time-synced line progression
+    // Theme-aware styling with dynamic colors
+}
+```
+
+#### Integration with Now Playing Screen
+```kotlin
+class NowPlayingViewModel(
+    private val playerManager: PlayerManager,
+    private val songRepository: SongRepository,
+    private val lyricsRepository: LyricsRepository
+) : ViewModel() {
+    private val _lyricsState = MutableStateFlow<List<Lyrics>>(emptyList())
+    val lyricsState: StateFlow<List<Lyrics>> = _lyricsState.asStateFlow()
+    
+    private val _selectedLanguage = MutableStateFlow("eng")
+    val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
+    
+    // Auto-loads lyrics when song changes
+    // Manages language preferences
+    // Provides lyrics state to UI
+}
+```
+
+#### Lyrics Parser Utility
+```kotlin
+object LrcParser {
+    fun parseSynchronizedLyrics(lyrics: Lyrics): SynchronizedLyricsData?
+    fun getCurrentLyricsLine(synchronizedLyrics: SynchronizedLyricsData, currentPositionMs: Long): Int?
+    fun getPreferredLyrics(allLyrics: List<Lyrics>, preferredLanguage: String, preferSynced: Boolean): Lyrics?
+    // Handles LRC format parsing with JSON structure
+    // Manages timing calculations with offset support
+    // Provides language preference logic
+}
+```
+
+## 9. Key Features Implementation Snippets
 
 ### Authentication Flow
 The `LoginViewModel` and `LoginScreen` remain structurally similar, but the underlying repository and token management are now more robust.

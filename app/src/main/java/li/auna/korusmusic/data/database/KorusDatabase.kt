@@ -15,9 +15,10 @@ import li.auna.korusmusic.data.database.entities.*
         ArtistEntity::class,
         PlaylistEntity::class,
         PlaylistSongEntity::class,
-        PlayHistoryEntity::class
+        PlayHistoryEntity::class,
+        LyricsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,6 +28,7 @@ abstract class KorusDatabase : RoomDatabase() {
     abstract fun artistDao(): ArtistDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun playHistoryDao(): PlayHistoryDao
+    abstract fun lyricsDao(): LyricsDao
 
     companion object {
         const val DATABASE_NAME = "korus_database"

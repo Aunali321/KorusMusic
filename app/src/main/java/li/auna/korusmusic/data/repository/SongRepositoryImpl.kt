@@ -118,6 +118,14 @@ class SongRepositoryImpl(
                 database.withTransaction {
                     // Sync songs
                     database.songDao().insertSongs(songs.map { it.toEntity() })
+                    
+                    // Sync lyrics for all songs
+                    val allLyrics = songs.flatMap { song ->
+                        song.lyrics.map { it.toEntity() }
+                    }
+                    if (allLyrics.isNotEmpty()) {
+                        database.lyricsDao().insertAllLyrics(allLyrics)
+                    }
                 }
             } catch (e: Exception) {
                 // Log error and rethrow so UI can handle it properly
@@ -131,7 +139,17 @@ class SongRepositoryImpl(
             try {
                 val idsString = songIds.joinToString(",")
                 val songs = apiServiceProvider.getApiService().getSongs(ids = idsString)
-                database.songDao().insertSongs(songs.map { it.toEntity() })
+                database.withTransaction {
+                    database.songDao().insertSongs(songs.map { it.toEntity() })
+                    
+                    // Sync lyrics for requested songs
+                    val allLyrics = songs.flatMap { song ->
+                        song.lyrics.map { it.toEntity() }
+                    }
+                    if (allLyrics.isNotEmpty()) {
+                        database.lyricsDao().insertAllLyrics(allLyrics)
+                    }
+                }
             } catch (e: Exception) {
                 // Log error but don't throw
             }

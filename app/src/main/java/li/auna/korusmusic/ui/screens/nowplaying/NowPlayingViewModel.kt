@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import li.auna.korusmusic.domain.model.Lyrics
 import li.auna.korusmusic.domain.model.Song
+import li.auna.korusmusic.domain.repository.LyricsRepository
 import li.auna.korusmusic.domain.repository.SongRepository
 import li.auna.korusmusic.player.PlayerManager
 import li.auna.korusmusic.player.PlayerState
@@ -15,11 +17,18 @@ import li.auna.korusmusic.player.RepeatMode
 
 class NowPlayingViewModel(
     private val playerManager: PlayerManager,
-    private val songRepository: SongRepository
+    private val songRepository: SongRepository,
+    private val lyricsRepository: LyricsRepository
 ) : ViewModel() {
 
     private val _nowPlayingState = MutableStateFlow(NowPlayingScreenState())
     val nowPlayingState: StateFlow<NowPlayingScreenState> = _nowPlayingState.asStateFlow()
+    
+    private val _lyricsState = MutableStateFlow<List<Lyrics>>(emptyList())
+    val lyricsState: StateFlow<List<Lyrics>> = _lyricsState.asStateFlow()
+    
+    private val _selectedLanguage = MutableStateFlow("eng")
+    val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
 
     init {
         // Observe player state changes
@@ -36,6 +45,14 @@ class NowPlayingViewModel(
                         RepeatMode.ALL -> RepeatMode.ALL
                     }
                 )
+                
+                // Load lyrics when song changes
+                val currentSongId = playerState.currentSong?.id
+                if (currentSongId != null) {
+                    loadLyricsForSong(currentSongId)
+                } else {
+                    _lyricsState.value = emptyList()
+                }
             }
         }
     }
@@ -111,6 +128,32 @@ class NowPlayingViewModel(
                 // playlistRepository.addSongsToPlaylist(playlistId, listOf(songId))
             } catch (e: Exception) {
                 // Handle error
+            }
+        }
+    }
+    
+    fun setSelectedLanguage(language: String) {
+        _selectedLanguage.value = language
+    }
+    
+    private fun loadLyricsForSong(songId: Long) {
+        viewModelScope.launch {
+            try {
+                lyricsRepository.getLyricsBySongId(songId).collect { lyrics ->
+                    _lyricsState.value = lyrics
+                }
+            } catch (e: Exception) {
+                _lyricsState.value = emptyList()
+            }
+        }
+    }
+    
+    fun refreshLyrics(songId: Long) {
+        viewModelScope.launch {
+            try {
+                lyricsRepository.syncLyricsForSong(songId)
+            } catch (e: Exception) {
+                // Handle error silently
             }
         }
     }

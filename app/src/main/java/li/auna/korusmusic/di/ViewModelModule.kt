@@ -17,7 +17,7 @@ val viewModelModule = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
     viewModel { LibraryViewModel(get(), get(), get(), get(), get()) }
     viewModel { SearchViewModel(get(), get(), get(), get()) }
-    viewModel { NowPlayingViewModel(get(), get()) }
+    viewModel { NowPlayingViewModel(get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get()) }
     
     // Detail ViewModels with SavedStateHandle
