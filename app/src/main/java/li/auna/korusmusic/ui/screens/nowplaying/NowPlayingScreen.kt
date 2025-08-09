@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.ImageBitmap
 import li.auna.korusmusic.player.PlayerServiceConnection
 import li.auna.korusmusic.player.RepeatMode
 import li.auna.korusmusic.ui.components.CoverArtImage
@@ -47,8 +48,11 @@ fun NowPlayingScreen(
     playerManager?.let { manager ->
         val playerState by manager.playerState.collectAsState()
 
-        // Extract dynamic colors from album art (placeholder - no actual image yet)
-        val dynamicColorScheme = rememberDynamicColorScheme(null)
+        // State to hold the cover art bitmap for dynamic color extraction
+        var coverArtBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+        
+        // Extract dynamic colors from album art
+        val dynamicColorScheme = rememberDynamicColorScheme(coverArtBitmap)
 
         // Animated background color
         val animatedBackgroundColor by animateColorAsState(
@@ -81,6 +85,7 @@ fun NowPlayingScreen(
                 playerServiceConnection = playerServiceConnection,
                 onNavigateBack = onNavigateBack,
                 bottomPeekPadding = bottomSheetPeekHeight,
+                onCoverArtLoaded = { bitmap -> coverArtBitmap = bitmap },
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -151,6 +156,7 @@ private fun MainContent(
     playerServiceConnection: PlayerServiceConnection,
     onNavigateBack: () -> Unit,
     bottomPeekPadding: Dp,
+    onCoverArtLoaded: (ImageBitmap?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -211,7 +217,8 @@ private fun MainContent(
                 CoverArtImage(
                     song = song,
                     size = 200.dp,
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    onBitmapLoaded = onCoverArtLoaded
                 )
             } ?: run {
                 Icon(

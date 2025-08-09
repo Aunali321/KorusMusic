@@ -8,6 +8,9 @@ import androidx.core.graphics.ColorUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.*
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.palette.graphics.Palette
 
 /**
  * Dynamic color scheme extracted from album art
@@ -33,8 +36,7 @@ data class DynamicColorScheme(
 object DynamicColorExtractor {
     
     /**
-     * Extract dominant color from album art (placeholder implementation)
-     * In a real implementation, this would analyze the actual bitmap
+     * Extract dominant color from album art by analyzing actual pixel data
      */
     suspend fun extractColorScheme(albumArt: ImageBitmap?): DynamicColorScheme {
         return withContext(Dispatchers.Default) {
@@ -42,9 +44,8 @@ object DynamicColorExtractor {
                 return@withContext DynamicColorScheme.Default
             }
             
-            // Placeholder: Generate color variations based on a simulated dominant color
-            // In a real app, you would analyze the bitmap pixels here
-            val dominantColor = simulateDominantColor(albumArt)
+            // Extract actual dominant color from bitmap using Palette library
+            val dominantColor = extractDominantColor(albumArt)
             
             generateColorScheme(dominantColor)
         }
@@ -115,20 +116,37 @@ object DynamicColorExtractor {
     }
     
     /**
-     * Simulate dominant color extraction (placeholder)
-     * In a real implementation, this would analyze pixel data
+     * Extract dominant color from bitmap using Android's Palette library
      */
-    private fun simulateDominantColor(albumArt: ImageBitmap): Color {
-        // Placeholder: Return different colors based on a hash of the bitmap
-        val hash = albumArt.hashCode()
-        val hue = (hash % 360).toFloat()
-        
-        return Color.hsl(
-            hue = hue,
-            saturation = 0.7f,
-            lightness = 0.5f,
-            alpha = 1f
-        )
+    private suspend fun extractDominantColor(albumArt: ImageBitmap): Color {
+        return withContext(Dispatchers.Default) {
+            val originalBitmap = albumArt.asAndroidBitmap()
+            
+            // Convert hardware bitmap to software bitmap if needed
+            val bitmap = if (originalBitmap.config == Bitmap.Config.HARDWARE) {
+                originalBitmap.copy(Bitmap.Config.ARGB_8888, false)
+            } else {
+                originalBitmap
+            }
+            
+            // Generate palette from bitmap
+            val palette = Palette.from(bitmap).generate()
+            
+            // Try to get the best color in order of preference:
+            // 1. Vibrant (most saturated)
+            // 2. Muted (less saturated but still colorful)
+            // 3. Dark vibrant
+            // 4. Light vibrant
+            // 5. Dominant color
+            val dominantColorInt = palette.vibrantSwatch?.rgb
+                ?: palette.mutedSwatch?.rgb
+                ?: palette.darkVibrantSwatch?.rgb
+                ?: palette.lightVibrantSwatch?.rgb
+                ?: palette.dominantSwatch?.rgb
+                ?: android.graphics.Color.BLUE
+            
+            Color(dominantColorInt)
+        }
     }
 }
 

@@ -20,6 +20,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.runtime.LaunchedEffect
+import android.graphics.drawable.BitmapDrawable
 import li.auna.korusmusic.data.preferences.PreferencesManager
 import li.auna.korusmusic.domain.model.Song
 import li.auna.korusmusic.domain.model.Album
@@ -33,7 +37,8 @@ fun CoverArtImage(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
     shape: Shape = RoundedCornerShape(8.dp),
-    preferencesManager: PreferencesManager = get()
+    preferencesManager: PreferencesManager = get(),
+    onBitmapLoaded: ((ImageBitmap?) -> Unit)? = null
 ) {
     val serverUrl by preferencesManager.serverUrl.collectAsState(initial = "")
     val coverUrl = song.getCoverUrl(serverUrl)
@@ -45,10 +50,26 @@ fun CoverArtImage(
             modifier = modifier
                 .size(size)
                 .clip(shape),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            onState = { state ->
+                when (state) {
+                    is AsyncImagePainter.State.Success -> {
+                        val drawable = state.result.drawable
+                        if (drawable is BitmapDrawable) {
+                            onBitmapLoaded?.invoke(drawable.bitmap.asImageBitmap())
+                        } else {
+                            onBitmapLoaded?.invoke(null)
+                        }
+                    }
+                    else -> onBitmapLoaded?.invoke(null)
+                }
+            }
         )
     } else {
         // Fallback when no cover is available - use glass surface
+        LaunchedEffect(song) {
+            onBitmapLoaded?.invoke(null)
+        }
         Box(
             modifier = modifier
                 .size(size)
